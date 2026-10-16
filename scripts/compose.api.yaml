@@ -1,0 +1,40 @@
+services:
+  website-api:
+    container_name: halo2-website-api
+    image: halo2-website-api:20261016-ranks
+    build:
+      context: ..
+      dockerfile: scripts/Dockerfile.api
+    restart: unless-stopped
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    environment:
+      TRUST_PROXY: '1'
+      WEBSITE_ORIGINS: https://halo2forever.net,https://www.halo2forever.net,http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - master-data:/state:ro
+      - /dev/null:/state/admin-token:ro
+      - /dev/null:/state/master-key.json:ro
+      - /dev/null:/state/peers.json:ro
+    tmpfs:
+      - /state/a:ro,noexec,nosuid,size=4k
+      - /state/b:ro,noexec,nosuid,size=4k
+      - /tmp:rw,noexec,nosuid,size=8m
+    networks: [master-private]
+    healthcheck:
+      test: ['CMD', 'node', '-e', 'fetch("http://127.0.0.1:8090/v1/website/status").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 30s
+      timeout: 12s
+      retries: 3
+volumes:
+  master-data:
+    external: true
+    name: halo2-directory-prod_master-data
+networks:
+  master-private:
+    external: true
+    name: halo2-directory-prod_private

@@ -1,0 +1,388 @@
+[
+  {
+    "file": "halo2-title-wordmark.svg",
+    "source": "resources/ui-menu-masters/svg/73258333b75ea21e6a91d7b09d6191a1501747c360e1df7214d726f4bed547fa.svg",
+    "sha256": "01ad97a46ac931adafe228d4605b66a48d77378c9e02f67a3b1dacb93c0c2680",
+    "experimental": true
+  },
+  {
+    "file": "central-circuit-frame.svg",
+    "source": "resources/ui-menu-masters/svg/f9df481071ac43ed37aa53e7e2f55cec72f6ac2c7c41c541cfae0d1ad6524f91.svg",
+    "sha256": "532293b7e8b48abcb9646dada179c008382876a53cd50b473207bc573931b7ca",
+    "experimental": true
+  },
+  {
+    "file": "main-menu-wave-material.svg",
+    "source": "resources/ui-menu-masters/svg/9572fa9ccc2030d86a0100e9aad7d112363b03829d08b0de3b49efb5857fd8ed.svg",
+    "sha256": "76e9df227eb573354890a3b9ce510003db0af94e3e80c28a59672c5d58988350",
+    "experimental": true
+  },
+  {
+    "file": "postgame-player-columns.svg",
+    "source": "resources/ui-menu-masters/svg/086027298280436d9186d24bbd939ef7f9ce8307cd68b980b50317c0a16f9733.svg",
+    "sha256": "89ea326ff832c57cf5b66ff5c80b15348136431eff678fb0ac50b51726c7ecde",
+    "experimental": true
+  },
+  {
+    "file": "postgame-selection-outline.svg",
+    "source": "resources/ui-menu-masters/svg/dabb6fa7da86237f62b1bb8770d0e3565974d096c8e83c913d4e28eb7af54125.svg",
+    "sha256": "8bdbd5d2d7523a54ceffd1d800ec51fa8bfe68ac91fc22ecc9bfade03f5aec2b",
+    "experimental": true
+  },
+  {
+    "file": "profile-grid-material.svg",
+    "source": "resources/ui-menu-masters/svg/63d9f363a43210aa28764b4865de4c94edd7edfece95644a6d1cd7d3aba70408.svg",
+    "sha256": "5efa44fb0ee2c9838edee9fc493351de67002971da27609dc8ff91300ac2d171",
+    "experimental": true
+  },
+  {
+    "file": "menu-timing-rail.svg",
+    "source": "resources/ui-menu-masters/svg/f2501d1fe1232814b0edaf233d7033083586a0ca2b4c7c63e9a4af5cc0d9b8af.svg",
+    "sha256": "a7ecf8dcd2d6ffcf8b55bf6aaabf0649469d88f905476257e988a19284612592",
+    "experimental": true
+  },
+  {
+    "file": "lobby-grid-panel.svg",
+    "source": "resources/ui-menu-masters/svg/cdf02a1485b04a4c9b2d51a79bbc984956c2a278b20de84e16a64ea0e55c5259.svg",
+    "sha256": "fcaa5508ed2033e0cdfb9d816d85d50a51567ed46eec3bfe92098a41b3820c24",
+    "experimental": true
+  },
+  {
+    "file": "vista-loading-thin-mechanical-ring.svg",
+    "source": "resources/ui-vista-loading-studies/svg/5aa17d5b92d1a462073f51d58b6575733be53185346c576ec7f06decd5d64230.svg",
+    "sha256": "54cab3db5ee7f1c002d160ae839fa4c0e40b88aae5a5cef3e97243e8fa0dc88c",
+    "experimental": true
+  },
+  {
+    "file": "vista-loading-wide-mechanical-ring.svg",
+    "source": "resources/ui-vista-loading-studies/svg/b73ac539e6274521a16b469c28659fa04844b4845f03f8345c8fc8fb94b541a4.svg",
+    "sha256": "10150207f27b0e25c3b869015052b3e963d333c27514d2a6bb3fbb59c4ffdf27",
+    "experimental": true
+  },
+  {
+    "file": "vista-loading-spaced-ticks.svg",
+    "source": "resources/ui-vista-loading-studies/svg/9999e4fe611e8c2ab57f25f239b0fbea3efa729430e2695c0ddabd1bc813d478.svg",
+    "sha256": "4fed5e78513f09111ec5ec9ded103b39b7905ebbaf815413200881697ec41d9c",
+    "experimental": true
+  },
+  {
+    "file": "vista-loading-optical-glint.svg",
+    "source": "resources/ui-vista-loading-studies/svg/8e2273ca87d0236efe74fde88449023e670637a5a93bd3ec5518aa75cdf109d5.svg",
+    "sha256": "1d8d18bd61457870b3479b8f80d66c9be33353a84e1667011f8f21659f7e447c",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-1.svg",
+    "source": "resources/ui-menu-masters/svg/9a12dc43b1afa1928320306091896a219c4cd357dc345d4b5db345c6e057c489.svg",
+    "sha256": "d14aed6b9bb02f0d6f813dd0b4fe8160a4b6c319fd883cf4543df8393a476f44",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-2.svg",
+    "source": "resources/ui-menu-masters/svg/3199ecab4ab213f80bfb2bb3f3c87466d8b969ffa3a2bb474660e346128a26d0.svg",
+    "sha256": "5ce82695f05ba1e36f7ba50f876171273bb8ca0fd9138fe7a5a28b6ffd866ec0",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-3.svg",
+    "source": "resources/ui-menu-masters/svg/5e0e596cfc727c39bdcb2730d5a980ebd8180b62f503ad7f29a6e37733a71095.svg",
+    "sha256": "b3366acad8ab7bc839e8de78902f4072e5543a824fce36aceacec3a0a073fb71",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-4.svg",
+    "source": "resources/ui-menu-masters/svg/58c136c321d6b73870ebe449d38468413f74d42ff9c01906fe8e2de72cb69173.svg",
+    "sha256": "705c3e53ca44f3b10b5c0dc51f7a0db7a439c2e14d09ca4cc8c6fc0799fd6bb1",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-5.svg",
+    "source": "resources/ui-menu-masters/svg/9c214f57f5ad890ead0b687a956a6468954be58784dba16572381ef6b839810a.svg",
+    "sha256": "e913de039ed4cb92b15518f8c217491c24b38775b9a6b0fcb6f4a3794e4bc3a9",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-6.svg",
+    "source": "resources/ui-menu-masters/svg/fe3d826e89a13e58a74f20f9bfc23c3988a03569db46571aad1a0f269d88e119.svg",
+    "sha256": "914e36ccd3cf3d23fcf3a9728af823d7bb7c132f65378347ecca8d565d74af20",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-7.svg",
+    "source": "resources/ui-menu-masters/svg/4bfcf3abe8192ab7cf2fec4318e3f15513ff9a6f5094c5a2af9fbfd369e5ca92.svg",
+    "sha256": "5a0d754faf4ebe49770cbaab2b4133e47f4bf3e4dce9f86e18d291f65b8a98e0",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-8.svg",
+    "source": "resources/ui-menu-masters/svg/14d268b1055c7e176dc3ccc1cb5ddce71aa7da74467147fbe9a425977516c66e.svg",
+    "sha256": "998d1c0990836fbd0f3924fbe4c131915c3e2c4c75c4bf8d92a1e95a7f8d213b",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-9.svg",
+    "source": "resources/ui-menu-masters/svg/e7581295193dfe7a3e473b447645df5daf8bd91ac324f0644cab66dbb1702b95.svg",
+    "sha256": "0e5a76fc436669ddd913c7ab6a637ad8993b392e086d065618b9ff4dc4fcbf86",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-10.svg",
+    "source": "resources/ui-menu-masters/svg/e5995e9627c03e5627f661e814061fd07ab123a304bc11a7af6bf35a62e26ad5.svg",
+    "sha256": "3286d20e017b1bab64f5bc30d53201f7c303e45942192979097278d7abe45066",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-11.svg",
+    "source": "resources/ui-menu-masters/svg/ea5487017377d6d46cd31bffac1453ff5a515cdd6ada63f95fb1a5ea5ab4a282.svg",
+    "sha256": "adcce7a4edb9b17b578b464e959cf913e18d0dd6f4b85717725c1c93c9216248",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-12.svg",
+    "source": "resources/ui-menu-masters/svg/5029d97dfc66d2c85898a4d7f470df9e8f95f58c08c57e337003a0f26ad0bc79.svg",
+    "sha256": "ebef3d85314eac4dd4030b25e773953e4a02a01b738506eb9016e107b86c7aee",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-13.svg",
+    "source": "resources/ui-menu-masters/svg/34bf77650c4ae9b6ddf8aa65b8e4f35a330256cf3cb99487dbc4b6411355a5ff.svg",
+    "sha256": "0084d078a8c8960888877049b682275096bae1f747cfd7b627c956107b0d119a",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-14.svg",
+    "source": "resources/ui-menu-masters/svg/e2a2163e75cf2f0c59d34c315a12d076362b04cccd45f855b049f307df834cd5.svg",
+    "sha256": "7273e5346803283e5b36068d2484abf98b1fb958b7b8848c31d63874383e7344",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-15.svg",
+    "source": "resources/ui-menu-masters/svg/06ee4a7af35ad7924d7a2cca4e43049e2ba4e8963a7454c8f95b68b330e08ba4.svg",
+    "sha256": "c738b0395246450cc880c393c243ada08ea064fe6f8df751d64cc960373c1cb5",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-16.svg",
+    "source": "resources/ui-menu-masters/svg/5f526f2efe77f267798caba295914bef91232172c1da262adc5b93ae203b2583.svg",
+    "sha256": "8e7a380b20b967f08a02b05a6521ccc673ec0dfc8d1ab91c8b3fb107add51e7f",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-17.svg",
+    "source": "resources/ui-menu-masters/svg/0aa284e43f8e9c80a0edbab3fbfb0cbe56814967ff3f589d4bbeb7c9880919b1.svg",
+    "sha256": "507332c0e09f56301a99ebdd50b360e3ec06f5ccd77b644906087edd401cbc74",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-18.svg",
+    "source": "resources/ui-menu-masters/svg/826f15b6797663838cec38831044ad9b2a54d7ca9fb40e5bbebad1262aaad805.svg",
+    "sha256": "54e3ebf556ab21c855a668172c48b0419721a421108d3de073b2246817894019",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-19.svg",
+    "source": "resources/ui-menu-masters/svg/87b67a64fe897b88f50ecfb499c71adb0d4b3119550c3e3364471be44bcd68f6.svg",
+    "sha256": "acad26cc428e0d70395c31534dc606608585e899c8e42b0b4f9512481edfe4df",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-20.svg",
+    "source": "resources/ui-menu-masters/svg/114a96bd08aa18b28b840f94b0f576e9e9763756981a226bc54662c78bc4a708.svg",
+    "sha256": "2a41ca01237a44d512186ad6b98b371fcc501b817891388158c004eeb11f8d88",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-21.svg",
+    "source": "resources/ui-menu-masters/svg/283a2b8767797568e1549b2ecceaa04da876506f822b2f4ff2935a4edd3b6975.svg",
+    "sha256": "1b839cbb34f10d9e36d3e4aa2c83566b10df67304e1a43e2e4f38308b29c2267",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-22.svg",
+    "source": "resources/ui-menu-masters/svg/f8263147d362fe5b7487b41006d41b1f2f327053232c7b44a66ab71ad4710c18.svg",
+    "sha256": "aa0b5b96a36bbf3c3eeb59797d834700eaca1027171c8a18e703f18b0fba8b66",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-23.svg",
+    "source": "resources/ui-menu-masters/svg/5e3208469963b39bdcc72b267248664b71af9ff789d7a9de3e237d8e1160dfe4.svg",
+    "sha256": "5043d7a8c12074227cc1551b9a229d466cc89768cef6455bc7f393520789f806",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-24.svg",
+    "source": "resources/ui-menu-masters/svg/210f4f14b1889d10c0e4abb585dd72385e303b30fc09e563c0c986acec1128c2.svg",
+    "sha256": "bb059281e93db082b84f4d30e975cc2ffc55c6e29a1b84e510c85fda503cb358",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-25.svg",
+    "source": "resources/ui-menu-masters/svg/737d640b99db90397dcc9c713bc16e397581b43b481c943e6c2ad4bcac197de9.svg",
+    "sha256": "6d139f09c4cd6097fbf30b657c54ec026e5df87ee4ee805f05d5b0dde6aeaa6b",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-26.svg",
+    "source": "resources/ui-menu-masters/svg/43f1f93ce158d467e37bbefdfaf165457736323cae4c540e12517c5d3fff06cd.svg",
+    "sha256": "4668aa279bd85b2820a3cccd4e113da2241dc4fbfc4e749414b5640600c3881f",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-27.svg",
+    "source": "resources/ui-menu-masters/svg/09a03d408a2293e7812b5676543cf3b0fb6f38544861d35ab0bb5679eadab850.svg",
+    "sha256": "13aec47d2822e58232baedb97a5d1700611ac9eb259e515d5e0c83f6213d4240",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-28.svg",
+    "source": "resources/ui-menu-masters/svg/9bd832ccaa05ccf396797bcf2006fdfb247146ca68259785c07523cbb4d15c3e.svg",
+    "sha256": "2d411321393303ded18f19dd410fbe0b8518fca02e19f354b783b8e3b2036b74",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-29.svg",
+    "source": "resources/ui-menu-masters/svg/b5d12526d42ac2e249af9c71bd273c6a94284e824af6fbe70fcb0852286c75cf.svg",
+    "sha256": "44d09547efb7a90f516e79951fafc2e0fe874d4ca90f221b80e1f0d2ea4fa82f",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-30.svg",
+    "source": "resources/ui-menu-masters/svg/ca7d34ac03d6f064304141f756dc5935188e70bccb58642c76438092395e86bf.svg",
+    "sha256": "22f2f2c572b6fadf9b8cdf36ec39bcefbf16ee87e576dbf911153aecfe31167b",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-31.svg",
+    "source": "resources/ui-menu-masters/svg/929ae27f5a9b49f598fa9756d692bcb39f69be0af2b60a2f7b3667fc397af805.svg",
+    "sha256": "eab7298a46c39adf37ffe070ac18cc9aebab84fe675e917a24f1382b39a59d39",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-32.svg",
+    "source": "resources/ui-menu-masters/svg/14019cf90ad55b8d439519ef7c66abdf39b99eb6a6b1b67e1d5f064134b95141.svg",
+    "sha256": "7e1716b7fee2e47b69c1286c2dd7ecc18985eb354a7158fa5e932d1d222ac7b8",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-33.svg",
+    "source": "resources/ui-menu-masters/svg/08b30d9ef446d97d4c2f63d53853600b043e0132999ac4951a9c7e6177e2c874.svg",
+    "sha256": "6856a187db5d2aeffdfc861235ad29c73ccc9a154e6bad2296732e7a3c5a46e6",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-34.svg",
+    "source": "resources/ui-menu-masters/svg/eb3c14ec0498549c387a93d935a631e36541e75fc41f0619568a9fb3ed77b351.svg",
+    "sha256": "1cafd1e60814a4b23b3b699240dd575836ae49ec94250d071b498b71b82939ff",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-35.svg",
+    "source": "resources/ui-menu-masters/svg/7800f7288a51efb5a7942d6a4069bbf0bee9953ab5c4d60d9039a9b04e6af630.svg",
+    "sha256": "398495cba24d433b10e470a2c78311ea5c34db23fc0ee45f5e940e1d1d6be6ea",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-36.svg",
+    "source": "resources/ui-menu-masters/svg/39979bc06f38865da62a22f5906aa327b172b999b22cdb4830c4120342c2194c.svg",
+    "sha256": "c6c010c74a63922ca6e5170a02298d499b5c38ce5f65785c228447fcd4c2ba05",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-37.svg",
+    "source": "resources/ui-menu-masters/svg/5d4a735f35b1871edd7a5400e32f206bfd48a4414a4b43f4c7d60a1ce1ced448.svg",
+    "sha256": "6a156c07ece54293a6e07707ef14316f5eff768e5129f6e3f0e546e49047c961",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-38.svg",
+    "source": "resources/ui-menu-masters/svg/873fb96ce5acdf928c79fed80fff4881cb2c768e6051a383f086840c44400c09.svg",
+    "sha256": "02033c596c51000e9ef35cd941da8086d83620ca623e5d493cf271b42d7ce453",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-39.svg",
+    "source": "resources/ui-menu-masters/svg/e7b45c8badb625b4c59843f8618f1f1e9fa314c3802af170663b06c0286004b2.svg",
+    "sha256": "5c65f5dabf9a2797623426d3a197980594a8907d257ae54bd261de53968f67fa",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-40.svg",
+    "source": "resources/ui-menu-masters/svg/0d1976913728667196dc21be051312f4daace724b5bab11874c73c9eb658d373.svg",
+    "sha256": "b9b69046bdef89d7d24e6a0b2988dabc8663862903be74f805efa7fb111b71cb",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-41.svg",
+    "source": "resources/ui-menu-masters/svg/da60f3f2b9fe60eea1567d8db60538a5177cab9b9c120c27ebd2e0a7c4fbaf78.svg",
+    "sha256": "de764e8b9389565470bf23a8c5532deadc0bb39437578edd8d4419be716618d0",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-42.svg",
+    "source": "resources/ui-menu-masters/svg/7cea1006ac9c9bbf18ac0882a94005d423a15b8114485fec213069a30e541e49.svg",
+    "sha256": "fed63cad749fd62374ccad0de681019640060a80928d4f3aa17201fa6f87833e",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-43.svg",
+    "source": "resources/ui-menu-masters/svg/9c7bab031ee6e446afc70e688be7d0e320b42496fd0f0ccd0383057ed2b9565d.svg",
+    "sha256": "3cdf11e5c9298fd8df584788baefc6be88972e12b01c9abc19364f87743b87db",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-44.svg",
+    "source": "resources/ui-menu-masters/svg/24b5876beaa470a4577a420d7dcf072d8b82dc6cb1d168aaf6a10fc6092ffbee.svg",
+    "sha256": "9a83eeb305fe1c59427bc4a74f5f072b5c94964e712a2555562196783f99d4ec",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-45.svg",
+    "source": "resources/ui-menu-masters/svg/8193450e416b7cb9623cc45499efd11e2f28bad8a0e7ea14b90936d7428cbec7.svg",
+    "sha256": "9f89053dbec7c07f768dcff6ecde99a470c3a459bb59741a0892ea9f63b1e4e7",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-46.svg",
+    "source": "resources/ui-menu-masters/svg/e89c92228cd699d87e046330cea05b638f82e837b71263ff8e8da22d1ca6b9ca.svg",
+    "sha256": "14f78f54aed00841bb606cccac21452e072dce23506feab8e643e8de6b679f42",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-47.svg",
+    "source": "resources/ui-menu-masters/svg/1a32c66be0b4973e97b0bb484170f25722a17daed983d0cecb352d4e3e4c147e.svg",
+    "sha256": "195642239f548a58ac3982b905df8cf75e718d11f5ebc896769ab29ac7b1180a",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-48.svg",
+    "source": "resources/ui-menu-masters/svg/af1ebddfcf7747cfa475f94c6b9eeeae915e9818750a6a91bdb45db381de2c9b.svg",
+    "sha256": "ccf199d42cfd92e2c1fc0a7aaa2bd428651d1e6ee45ce699bbf369fb5e9c4bb6",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-49.svg",
+    "source": "resources/ui-menu-masters/svg/614580cf65d7e6ce1f7d4b1cb51824fd7c0a982162bfc0c9982aa704ada7e469.svg",
+    "sha256": "277b2f01469f5f512ee5902b6dc28493ad96037f8746dd55000e4cd682da9c2e",
+    "experimental": true
+  },
+  {
+    "file": "ranks/level-50.svg",
+    "source": "resources/ui-menu-masters/svg/40b82b446f33457dbb09a14f127d7e91d0886b7be8772842078dc63b607331c6.svg",
+    "sha256": "5d2d09c73134d71196ba023565329bd06a74984e9e52f9ebfbedaf856f44ad40",
+    "experimental": true
+  },
+  {
+    "file": "overview-frame.svg",
+    "source": "resources/ui-menu-masters/svg/cdf02a1485b04a4c9b2d51a79bbc984956c2a278b20de84e16a64ea0e55c5259.svg",
+    "sha256": "582880a2b3a89085b7204e6f96912eabf8b154403d8cb1ede260b05134c6c0f6",
+    "derived_from": "lobby-grid-panel.svg",
+    "adaptation": "Separate existing frame and material groups; fit their occupied 722 by 338 canvas. Paths and paint are unchanged."
+  },
+  {
+    "file": "overview-material.svg",
+    "source": "resources/ui-menu-masters/svg/cdf02a1485b04a4c9b2d51a79bbc984956c2a278b20de84e16a64ea0e55c5259.svg",
+    "sha256": "2dc4809510f5a2fe9c809b7867f33d51175f65fc7c8f0a8bfd05f83fc36b8771",
+    "derived_from": "lobby-grid-panel.svg",
+    "adaptation": "Separate existing frame and material groups; fit their occupied 722 by 338 canvas. Paths and paint are unchanged."
+  }
+]
