@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
+import { VistaIntro } from "./vista-motion";
 import { ArrowDown, ArrowUpRight, RefreshCw, Trophy } from "lucide-react";
 import { api, label, playerLink, ratio } from "@/lib/api";
 import type { Leaderboard, Sort } from "@/lib/types";
@@ -98,7 +99,7 @@ export function LeaderboardView() {
             : "Live master server data"}
         </span>
       </div>
-      <div className="data-panel">
+      <VistaIntro className="data-panel" track="panel">
         <div className="panel-caption">
           <span>PLAYER STANDINGS</span>
           <span className="muted">
@@ -137,7 +138,7 @@ export function LeaderboardView() {
               </thead>
               <tbody>
                 {data.players.map((p) => (
-                  <tr key={p.id}>
+                  <VistaIntro as="tr" track="player" delay={250} key={p.id}>
                     <td className={p.position <= 3 ? "top-position" : ""}>
                       {String(p.position).padStart(2, "0")}
                     </td>
@@ -170,13 +171,13 @@ export function LeaderboardView() {
                         <ArrowUpRight size={16} />
                       </Link>
                     </td>
-                  </tr>
+                  </VistaIntro>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </VistaIntro>
       {data && data.total > 25 && (
         <div className="pagination">
           <button

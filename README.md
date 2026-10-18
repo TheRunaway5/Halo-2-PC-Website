@@ -47,6 +47,19 @@ Public skill emblems use `min(raw_rank, 49) + 1`, matching the master and origin
 
 `public/vista/provenance.json` records original source paths and SHA-256 hashes for all copied SVGs, including rank artwork. These are existing authored replication studies; their reuse does not claim completed retail pixel parity. The landing page follows the game repository's actual development status and does not present unfinished gameplay as released.
 
+## Vista motion
+
+`lib/vista-motion-data.json` contains the original menu tracks and bitmap bindings extracted from Vista build `11081.07.04.30.0934.main`, `mainmenu.map` SHA-256 `eb259c207da26adc1820ae0757d23efb4ce1d2c2018956635d1094c8364f6b44`. Animation IDs are **one-based**. Tracks use equally spaced linear keys, following the game repository's `src/frontend_vista.cpp` parser and `src/frontend_painter.cpp` interpolation.
+
+- Hero wordmark: animation 30, 250 ms fade. Overview/standings panels: animation 3, 310 ms slide. Menu material entrance: animation 1, 320 ms, including its initial two-thirds hold at zero alpha.
+- Player rows and their rank emblems: animation 11, 230 ms with the source 250 ms delay. Postgame surfaces use animation 7, 270 ms with a 150 ms delay. Rank art has no continuous rotation or frame cycling.
+- Record links retain the static `list_bkd` base and add the authored `list_bkd_multiply` / `list_bkd_multiply_left` SVGs with source U scroll rates +0.2 / -0.2 per second. Their highlight uses the menu's 120 ms selection / 200 ms deselection and 0.5-to-1 opacity ratio. Table highlight transitions use the player skin's 1 ms / 300 ms selection timings.
+- Loading artwork uses the original three concentric pairs of thin/wide textures: opposite rotation directions, quadratic startup thresholds of 1.5 / 2 / 2.5 seconds, 15-second size oscillation and 1:1/2:1/3 sizes. `lib/vista-motion.ts` follows original `66A512` / `66A0E2` geometry and PE float constants from `src/vista_loading_geometry.cpp`. The former arbitrary 14-second single spinner is removed.
+
+Introductions run when a widget first enters view. Native 640px horizontal positions scale to the browser viewport; website layout, colors, SVG artwork and browser blending remain adaptations. This does not reproduce D3D shaders, x87 precision, the game's full loading screen, or exit transitions that would delay browser navigation. There is no fabricated progress indicator. The independent fixture in `tests/fixtures/vista-loading.json` retains only 20 samples of original executable draw positions/UVs (39 KB), with source hashes. Tests compare all six layers at startup boundaries and through one minute within `1e-5` normalized coordinates.
+
+The header's **Pause motion** control persists locally. System reduced motion disables animation, decorative loops pause outside the viewport or while the tab is hidden, and introductions release their transforms when finished. Content remains visible without JavaScript. No dummy records are bundled with these animations.
+
 Report detail tables retain source indices for unverified medal/weapon/statistic semantics. Older summary reports remain summaries. Guest personal data is excluded, while team totals may include guests. Dates are displayed in the visitor's local timezone.
 
 There are **no demo routes or fake records in the production build**. Fictional screenshot fixtures are kept only in ignored `.local/`, run on loopback, and are never uploaded to the master or Pages.

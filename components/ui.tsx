@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Crosshair, Code2 as Github } from "lucide-react";
+import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 export const sourceUrl = "https://github.com/TheRunaway5/Halo-2-Decompiled";
 export function SectionTitle({
   number,
@@ -13,7 +14,7 @@ export function SectionTitle({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="section-heading">
+    <VistaIntro className="section-heading" track="panel">
       <div>
         <p className="eyebrow">
           <span>{number}</span> / {eyebrow}
@@ -21,7 +22,7 @@ export function SectionTitle({
         <h1>{title}</h1>
       </div>
       {children}
-    </div>
+    </VistaIntro>
   );
 }
 export function EmptyState({
@@ -51,11 +52,7 @@ export function Loading({
 }) {
   return (
     <div className="loading-state" role="status">
-      <img
-        className="loading-ring"
-        src="/vista/vista-loading-thin-mechanical-ring.svg"
-        alt=""
-      />
+      <VistaLoadingRings className="loading-ring" />
       <span>{text}…</span>
     </div>
   );

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
+import { VistaIntro } from "./vista-motion";
 import { ArrowLeft, Download, Medal } from "lucide-react";
 import { api, date, label, playerLink, ratio } from "@/lib/api";
 import type { Report } from "@/lib/types";
@@ -134,7 +135,7 @@ export function CarnageReport() {
               <strong>{report.ranked ? "Ranked" : "Unranked"}</strong>
             </div>
           </div>
-          <div className="data-panel">
+          <VistaIntro className="data-panel" track="postgame" delay={150}>
             <div className="panel-caption">
               <span>FINAL STANDINGS</span>
               <span className="muted">
@@ -167,7 +168,7 @@ export function CarnageReport() {
                   {[...report.players]
                     .sort((a, b) => a.placement - b.placement)
                     .map((p) => (
-                      <tr key={p.id}>
+                      <VistaIntro as="tr" track="player" delay={250} key={p.id}>
                         <td className={p.placement === 1 ? "top-position" : ""}>
                           {p.placement === 1 ? (
                             <Medal size={18} />
@@ -197,12 +198,12 @@ export function CarnageReport() {
                         <td>{p.assists}</td>
                         <td>{p.suicides}</td>
                         <td>{ratio(p.kills, p.deaths)}</td>
-                      </tr>
+                      </VistaIntro>
                     ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </VistaIntro>
           {report.teams.length > 0 && (
             <div className="team-standings">
               <h2>Team results</h2>

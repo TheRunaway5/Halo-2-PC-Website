@@ -11,22 +11,14 @@ import {
 } from "lucide-react";
 import { Status } from "@/components/status";
 import { sourceUrl } from "@/components/ui";
+import { VistaIntro, VistaLoadingRings, VistaMenuMaterial } from "@/components/vista-motion";
 export default function Home() {
   return (
     <>
       <section className="hero">
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-orbit" aria-hidden="true">
-          <img
-            className="orbit-wide"
-            src="/vista/vista-loading-wide-mechanical-ring.svg"
-            alt=""
-          />
-          <img
-            className="orbit-thin"
-            src="/vista/vista-loading-thin-mechanical-ring.svg"
-            alt=""
-          />
+          <VistaLoadingRings className="orbit-rings" />
           <div className="orbit-core" />
           <span className="orbit-coordinate">
             INSTALLATION 05 / SYSTEM ACTIVE
@@ -36,10 +28,10 @@ export default function Home() {
           <p className="eyebrow">
             <span className="tiny-cross">✦</span> THE NEXT CHAPTER OF A CLASSIC
           </p>
-          <div className="hero-logo">
+          <VistaIntro className="hero-logo" track="wordmark">
             <img src="/vista/halo2-title-wordmark.svg" alt="Halo 2" />
             <span>F O R E V E R</span>
-          </div>
+          </VistaIntro>
           <h1>
             A classic.
             <br />
@@ -101,7 +93,7 @@ export default function Home() {
               Follow development <ArrowUpRight size={16} />
             </a>
           </div>
-          <div className="systems-panel">
+          <VistaIntro className="systems-panel" track="panel">
             <img
               className="overview-frame"
               src="/vista/overview-frame.svg"
@@ -142,7 +134,7 @@ export default function Home() {
                 <span>{x.n}</span>
               </div>
             ))}
-          </div>
+          </VistaIntro>
         </section>
         <section className="records-section">
           <div className="records-heading">
@@ -155,8 +147,9 @@ export default function Home() {
               The carnage report is just the beginning.
             </p>
           </div>
-          <div className="record-links">
+          <VistaIntro className="record-links" track="frame">
             <Link href="/leaderboard/" className="record-link">
+              <VistaMenuMaterial />
               <div className="record-icon">
                 <Shield size={30} />
               </div>
@@ -172,6 +165,7 @@ export default function Home() {
               <span className="record-index">01</span>
             </Link>
             <Link href="/players/" className="record-link">
+              <VistaMenuMaterial />
               <div className="record-icon">
                 <Crosshair size={30} />
               </div>
@@ -186,7 +180,7 @@ export default function Home() {
               <ArrowUpRight size={26} />
               <span className="record-index">02</span>
             </Link>
-          </div>
+          </VistaIntro>
         </section>
         <section className="development-section">
           <div>

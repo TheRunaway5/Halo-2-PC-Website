@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, Code2 as Github } from "lucide-react";
 import { sourceUrl } from "./ui";
+import { MotionToggle } from "./vista-motion";
 export function Header() {
   const path = usePathname();
   return (
@@ -32,6 +33,7 @@ export function Header() {
           Player search
         </Link>
       </nav>
+      <MotionToggle />
       <a
         className="source-link"
         href={sourceUrl}

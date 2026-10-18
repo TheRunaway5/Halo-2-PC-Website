@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
+import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
 import type { MatchPage, Player } from "@/lib/types";
@@ -168,7 +169,7 @@ export function PlayerSearch() {
             </div>
           ) : (
             <div className="archive-art" aria-hidden="true">
-              <img src="/vista/vista-loading-thin-mechanical-ring.svg" alt="" />
+              <VistaLoadingRings className="archive-rings" />
               <span>EVERY SPARTAN HAS A STORY.</span>
             </div>
           )}
@@ -183,7 +184,7 @@ export function PlayerSearch() {
                 @{history.player.discord_username}{" "}
                 <span className="muted">/</span> Recorded match history
               </p>
-              <div className="profile-strip">
+              <VistaIntro className="profile-strip" track="panel">
                 <span className="player-emblem large">
                   {history.player.screen_name.slice(0, 1).toUpperCase()}
                 </span>
@@ -195,7 +196,7 @@ export function PlayerSearch() {
                 <Link className="text-link" href="/players/">
                   Find another player <Search size={15} />
                 </Link>
-              </div>
+              </VistaIntro>
               <div className="data-panel">
                 <div className="panel-caption">
                   <span>POSTGAME CARNAGE REPORTS</span>
@@ -221,7 +222,7 @@ export function PlayerSearch() {
                       </thead>
                       <tbody>
                         {history.matches.map((m) => (
-                          <tr key={m.id}>
+                          <VistaIntro as="tr" track="postgame" delay={150} key={m.id}>
                             <td>
                               <Link
                                 className="match-name"
@@ -256,7 +257,7 @@ export function PlayerSearch() {
                                 <ArrowUpRight size={18} />
                               </Link>
                             </td>
-                          </tr>
+                          </VistaIntro>
                         ))}
                       </tbody>
                     </table>

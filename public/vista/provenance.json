@@ -384,5 +384,17 @@
     "sha256": "2dc4809510f5a2fe9c809b7867f33d51175f65fc7c8f0a8bfd05f83fc36b8771",
     "derived_from": "lobby-grid-panel.svg",
     "adaptation": "Separate existing frame and material groups; fit their occupied 722 by 338 canvas. Paths and paint are unchanged."
+  },
+  {
+    "file": "menu-scroll-right.svg",
+    "source": "resources/ui-menu-masters/svg/61132696d3dd6f91ee47ab7d0b24ad70124bcd5c4a55608001ccb2330de3cd1c.svg",
+    "sha256": "f15dccedad746850e5539d9a89bad00050cc53f68a17007701255e0d77e7bf36",
+    "experimental": true
+  },
+  {
+    "file": "menu-scroll-left.svg",
+    "source": "resources/ui-menu-masters/svg/142bce5a880e71dc7894015e7661b07a97ad1bc8ccff3adbfd0c5d4e84ba7e12.svg",
+    "sha256": "7107e59555fa1e1e2c7901da5306a3d8454c95cf423464665fd49c2a37bdb829",
+    "experimental": true
   }
 ]

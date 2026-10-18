@@ -1,0 +1,382 @@
+{
+  "source": {
+    "build": "11081.07.04.30.0934.main",
+    "cache_sha256": "eb259c207da26adc1820ae0757d23efb4ce1d2c2018956635d1094c8364f6b44",
+    "tracks": "wigl +0x120, stride44; keys stride20; animation IDs are one-based",
+    "interpolation": "linear, equally spaced keys; frontend_painter.cpp interpolate"
+  },
+  "intro": {
+    "frame": {
+      "id": 1,
+      "ms": 320,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 0.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 0.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    },
+    "panel": {
+      "id": 3,
+      "ms": 310,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 1024.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    },
+    "postgame": {
+      "id": 7,
+      "ms": 270,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 1024.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    },
+    "player": {
+      "id": 11,
+      "ms": 230,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 1024.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    },
+    "rank": {
+      "id": 13,
+      "ms": 210,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 1024.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    },
+    "wordmark": {
+      "id": 30,
+      "ms": 250,
+      "keys": [
+        {
+          "alpha": 0.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        {
+          "alpha": 1.0,
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      ]
+    }
+  },
+  "menu": {
+    "bitmaps": [
+      {
+        "name": "ui\\list_skins\\main_menu\\list_bkd",
+        "animation": 1,
+        "delay": 0,
+        "scroll": [
+          0.0,
+          0.0
+        ],
+        "fps": 0.0
+      },
+      {
+        "name": "ui\\list_skins\\main_menu\\list_bkd_rings_right",
+        "animation": 1,
+        "delay": 0,
+        "scroll": [
+          0.0,
+          0.0
+        ],
+        "fps": 0.0
+      },
+      {
+        "name": "ui\\list_skins\\main_menu\\list_bkd_multiply",
+        "animation": 1,
+        "delay": 0,
+        "scroll": [
+          0.20000000298023224,
+          0.0
+        ],
+        "fps": 0.0
+      },
+      {
+        "name": "ui\\list_skins\\main_menu\\list_bkd_multiply_left",
+        "animation": 1,
+        "delay": 0,
+        "scroll": [
+          -0.20000000298023224,
+          0.0
+        ],
+        "fps": 0.0
+      }
+    ],
+    "focus": [
+      {
+        "ms": 120,
+        "keys": [
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 200,
+        "keys": [
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 1,
+        "keys": [
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 90,
+        "keys": [
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.699999988079071,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 90,
+        "keys": [
+          {
+            "alpha": 0.699999988079071,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.5,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 90,
+        "keys": [
+          {
+            "alpha": 0.699999988079071,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 90,
+        "keys": [
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.699999988079071,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      }
+    ]
+  },
+  "player": {
+    "bitmaps": [
+      {
+        "name": "ui\\list_skins\\pcr_lists\\pvp_others",
+        "animation": 11,
+        "delay": 250,
+        "scroll": [
+          0.0,
+          0.0
+        ],
+        "fps": 0.0
+      },
+      {
+        "name": "ui\\list_skins\\pcr_lists\\pvp_others",
+        "animation": 11,
+        "delay": 250,
+        "scroll": [
+          0.0,
+          0.0
+        ],
+        "fps": 0.0
+      },
+      {
+        "name": "ui\\global_bitmaps\\rank_icons_sm",
+        "animation": 11,
+        "delay": 250,
+        "scroll": [
+          0.0,
+          0.0
+        ],
+        "fps": 0.0
+      }
+    ],
+    "focus": [
+      {
+        "ms": 1,
+        "keys": [
+          {
+            "alpha": 0.4000000059604645,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 300,
+        "keys": [
+          {
+            "alpha": 1.0,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.4000000059604645,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      },
+      {
+        "ms": 1,
+        "keys": [
+          {
+            "alpha": 0.4000000059604645,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          {
+            "alpha": 0.4000000059604645,
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          }
+        ]
+      }
+    ]
+  }
+}
