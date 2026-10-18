@@ -549,17 +549,6 @@ p {
   background: linear-gradient(130deg, #17314950, #0c213440);
   transition: border-color 200ms linear, background-color 200ms linear;
 }
-.record-link:before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background: url("/vista/main-menu-wave-material.svg") bottom/100% 100%;
-  opacity: 0.04;
-  pointer-events: none;
-}
 .record-link:hover,
 .record-link:focus-visible {
   border-color: #7eabc9;
@@ -1605,7 +1594,7 @@ tbody tr:nth-child(even) {
     transition: none !important;
   }
 }
-/* Vista loading studies include a black plate; screen blending retains their light geometry. */
+/* Source luminance makes the black square plates and cutouts fully transparent. */
 .vista-loading-rings {
   position: relative;
   isolation: isolate;
@@ -1620,47 +1609,17 @@ tbody tr:nth-child(even) {
   width: 100%;
   height: 100%;
   mix-blend-mode: screen;
+  mask-mode: luminance;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
 }
 .vista-loading-rings .vista-ring-thin {
   opacity: 0.2039215714;
+  mask-image: url("/vista/vista-loading-thin-mechanical-ring.svg");
 }
 .vista-loading-rings .vista-ring-wide {
   opacity: 0.2666666806;
-}
-.vista-menu-material {
-  position: absolute;
-  inset: auto 0 0;
-  height: 62px;
-  overflow: hidden;
-  pointer-events: none;
-  opacity: 0.16;
-  mix-blend-mode: screen;
-  transition: opacity 200ms linear;
-}
-.record-link:is(:hover, :focus-visible) .vista-menu-material {
-  opacity: 0.32;
-  transition-duration: 120ms;
-}
-.vista-menu-material > span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 200%;
-  background-repeat: repeat-x;
-  background-size: 50% 100%;
-  animation: vista-menu-scroll linear infinite paused;
-}
-.vista-menu-material .vista-menu-forward {
-  background-image: url("/vista/menu-scroll-right.svg");
-}
-.vista-menu-material .vista-menu-reverse {
-  background-image: url("/vista/menu-scroll-left.svg");
-  animation-direction: reverse;
-}
-.vista-menu-material[data-motion-active="true"] > span {
-  animation-play-state: running;
-}
-@keyframes vista-menu-scroll {
-  to { transform: translateX(-50%); }
+  mask-image: url("/vista/vista-loading-wide-mechanical-ring.svg");
 }
 tbody tr {
   transition: background-color 300ms linear;

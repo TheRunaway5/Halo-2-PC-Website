@@ -114,15 +114,3 @@ export function VistaIntro({ children, className, track, delay = 0, as: Tag = "d
   }, [active, track, delay]);
   return <Tag ref={(node: HTMLDivElement | HTMLTableRowElement | null) => { ref.current = node; }} className={className} data-vista-intro={track}>{children}</Tag>;
 }
-
-/** The main menu's two multiply materials have U scroll +0.2 and -0.2 UV/second. */
-export function VistaMenuMaterial() {
-  const ref = useRef<HTMLSpanElement>(null);
-  const active = useActive(ref);
-  const forward = vistaMotion.menu.bitmaps.find((b) => b.name.endsWith("\\list_bkd_multiply"))!;
-  const reverse = vistaMotion.menu.bitmaps.find((b) => b.name.endsWith("\\list_bkd_multiply_left"))!;
-  return <span ref={ref} className="vista-menu-material" aria-hidden="true" data-motion-active={active}>
-    <span className="vista-menu-forward" style={{ animationDuration: `${1 / Math.abs(forward.scroll[0])}s` }} />
-    <span className="vista-menu-reverse" style={{ animationDuration: `${1 / Math.abs(reverse.scroll[0])}s` }} />
-  </span>;
-}

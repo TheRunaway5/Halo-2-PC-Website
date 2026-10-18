@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Status } from "@/components/status";
 import { sourceUrl } from "@/components/ui";
-import { VistaIntro, VistaLoadingRings, VistaMenuMaterial } from "@/components/vista-motion";
+import { VistaIntro, VistaLoadingRings } from "@/components/vista-motion";
 export default function Home() {
   return (
     <>
@@ -149,7 +149,6 @@ export default function Home() {
           </div>
           <VistaIntro className="record-links" track="frame">
             <Link href="/leaderboard/" className="record-link">
-              <VistaMenuMaterial />
               <div className="record-icon">
                 <Shield size={30} />
               </div>
@@ -165,7 +164,6 @@ export default function Home() {
               <span className="record-index">01</span>
             </Link>
             <Link href="/players/" className="record-link">
-              <VistaMenuMaterial />
               <div className="record-icon">
                 <Crosshair size={30} />
               </div>
