@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/ui";
 import { VistaMotionProvider } from "@/components/vista-motion";
+import { FirstVisitNotice } from "@/components/first-visit-notice";
 import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://halo2forever.net"),
@@ -28,12 +29,13 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth">
       <body>
         <VistaMotionProvider>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
-        <Header />
-        <main id="main">{children}</main>
-        <Footer />
+          <FirstVisitNotice />
+          <a className="skip-link" href="#main">
+            Skip to content
+          </a>
+          <Header />
+          <main id="main">{children}</main>
+          <Footer />
         </VistaMotionProvider>
       </body>
     </html>

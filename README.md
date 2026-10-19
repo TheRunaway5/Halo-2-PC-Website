@@ -47,6 +47,8 @@ Public skill emblems use `min(raw_rank, 49) + 1`, matching the master and origin
 
 `public/vista/provenance.json` records original source paths and SHA-256 hashes for all copied SVGs, including rank artwork. These are existing authored replication studies; their reuse does not claim completed retail pixel parity. The landing page follows the game repository's actual development status and does not present unfinished gameplay as released.
 
+On a visitor's first visit to any route, a Vista-styled modal explains that this is an unofficial fan project with no affiliation, endorsement, or sponsorship from Microsoft, Halo Studios, or Bungie. **Agree and continue** saves an acknowledgement in this browser's local storage under `halo2-fan-project-acknowledged-v1`; no acknowledgement is sent to the server. Returning visits skip the modal. If storage is unavailable, agreement still dismisses it for the current visit. The native dialog isolates keyboard focus and background interaction until agreement, then restores page scrolling.
+
 ## Vista motion
 
 `lib/vista-motion-data.json` contains the original menu tracks and bitmap bindings extracted from Vista build `11081.07.04.30.0934.main`, `mainmenu.map` SHA-256 `eb259c207da26adc1820ae0757d23efb4ce1d2c2018956635d1094c8364f6b44`. Animation IDs are **one-based**. Tracks use equally spaced linear keys, following the game repository's `src/frontend_vista.cpp` parser and `src/frontend_painter.cpp` interpolation.

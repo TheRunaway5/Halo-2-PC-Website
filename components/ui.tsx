@@ -71,7 +71,7 @@ export function Footer() {
           <Github size={15} /> Project source <ArrowUpRight size={13} />
         </a>
         <small>
-          Independent fan project. Not affiliated with Microsoft or Bungie.
+          Independent fan project. Not affiliated with Microsoft, Halo Studios, or Bungie.
           <br />
           Halo and related marks belong to their respective owners.
         </small>
