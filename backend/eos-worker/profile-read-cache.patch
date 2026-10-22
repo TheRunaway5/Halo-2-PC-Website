@@ -1,0 +1,42 @@
+--- a/multiplayer/master_server/player_profile.py
++++ b/multiplayer/master_server/player_profile.py
+@@ -1,5 +1,7 @@
+ """Authenticated current Halo appearance; historical PCR appearance stays immutable."""
+ import re
++from collections import OrderedDict
++from time import monotonic
+ from aiohttp import web
+ from .protocol import fields, identifier, require
+ from .player_statistics import initialize, enqueue, totals
+@@ -27,6 +29,7 @@
+ class PlayerProfiles:
+     def __init__(self, directory):
+         self.directory, self.db = directory, directory.store.db
++        self._statistics = OrderedDict()
+         initialize(self.db)
+         self.db.executescript("""
+         CREATE TABLE IF NOT EXISTS player_customization(
+@@ -42,7 +45,22 @@
+         require(row is not None, "Player profile not found", 404)
+         return dict(screen_name=row[0], joined_at=row[1], appearance=decoded(row[2]),
+                     service_tag=row[3], updated_at=row[4], revision=row[5] or 0,
+-                    statistics=totals(self.db,who))
++                    statistics=self.statistics(who))
++
++    def statistics(self, who):
++        # Accepted results and customization share this durable outbox revision.
++        # Heartbeats and public history pages must not rescan every past match.
++        row = self.db.execute("SELECT revision FROM eos_profile_outbox WHERE player=?", (who,)).fetchone()
++        revision = row[0] if row else None
++        cached = self._statistics.get(who)
++        now = monotonic()
++        if cached is None or cached[0] != revision or cached[1] <= now:
++            cached = (revision, now + 300, totals(self.db, who))
++            self._statistics[who] = cached
++        self._statistics.move_to_end(who)
++        while len(self._statistics) > 1024:
++            self._statistics.popitem(last=False)
++        return dict(cached[2])
+ 
+     def save(self, who, raw, tag=None):
+         previous = self.db.execute("SELECT appearance,service_tag FROM player_customization WHERE player=?", (who,)).fetchone()

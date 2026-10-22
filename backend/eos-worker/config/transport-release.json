@@ -1,15 +1,16 @@
 {
   "updated_at": "2026-10-22",
-  "image": "halo2-master-eos:20261022T214749Z-transport",
-  "rollback_image": "halo2-master-eos:20261022T200436Z-config",
+  "image": "halo2-master-eos:20261022T235241Z-profile-cache",
+  "rollback_image": "halo2-master-eos:20261022T214749Z-transport",
   "source_hashes": {
     "couch_players.py": "e835118bbf5bb2c127a42b543b22de52b647388fed190b2967d7aeff9ec91b60",
     "matchmaking.py": "6d3d2de73b3b8c427e9e862cbcf8673db3067b185b9f2ef364cd1240dcc4aace",
-    "match_transport.py": "26856474a6125d9f261686b4a69268d14ba45759fc49530f5ba601f4a5d9ee30"
+    "match_transport.py": "26856474a6125d9f261686b4a69268d14ba45759fc49530f5ba601f4a5d9ee30",
+    "player_profile.py": "e27f72cd1d7fe00404f4197f2eb5149e2b9c43afecc7a9231edcca259be8a205"
   },
-  "scope": "EOS v13 admission, measured host selection, per-room signed-voice keys; preserves existing v12 behavior",
+  "scope": "EOS v13 admission, measured host selection, per-room signed-voice keys; preserves existing v12 behavior; bounded revision-aware career read cache",
   "validation": {
-    "scoped_python_tests": 23,
+    "scoped_python_tests": 25,
     "native_sdk": {
       "sessions": true,
       "forced_relay": true,
@@ -59,7 +60,15 @@
       "scratch_removed": true
     },
     "signed_couch_profile_worker": true,
-    "changed_profile_ui_syntax": true
+    "changed_profile_ui_syntax": true,
+    "profile_read_cache": {
+      "reproduced_history_scan_regression": true,
+      "accepted_revision_invalidation": true,
+      "expiry": true,
+      "image_snapshot_immutability": true,
+      "max_players": 1024,
+      "ttl_seconds": 300
+    }
   },
   "pending": [
     "Delivered client runtime qualification",

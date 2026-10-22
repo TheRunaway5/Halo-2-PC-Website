@@ -298,3 +298,15 @@ on an isolated Xvfb display using the NVIDIA GPU and the same four-frame CLI and
 cause or qualify the EOS candidate. A fresh EOS build is running the full matrix
 on an isolated display. The previous launcher selection is preserved; the first
 failed candidate and all of its owned build artifacts were removed.
+
+The follow-up production image `halo2-master-eos:20261022T235241Z-profile-cache`
+also removes repeated lifetime-history scans from native profile heartbeats and
+public player/history reads. The master caches totals for at most 1,024 players
+and five minutes; a new accepted result or profile revision invalidates that
+player immediately. EOS publication/read-back still owns the replicated career
+statistics; accepted results remain the authority for reconciliation. The scoped
+master passed 25 tests, including the reproduced scan regression, revision
+invalidation and expiry. The actual image passed cache and snapshot checks, then
+deployed with a SQLite backup and health rollback. This saves repeated work on
+the master; it does not move Halo rank calculations or full carnage storage to
+Epic. The source overlay is [profile-read-cache.patch](profile-read-cache.patch).
