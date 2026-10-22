@@ -33,8 +33,8 @@ test("browser animation preserves startup, rotation direction, diameter and full
   for (const sample of fixture.cases) {
     sample.rings.forEach((vertices, layer) => {
       const motion = loadingRingAnimation(Math.floor(layer / 2) + 1, layer % 2 === 1);
-      const startAngle = parseFloat(motion.spin.keyframes[0].rotate);
-      const fullTurn = parseFloat(motion.spin.keyframes[1].rotate) - startAngle;
+      const startAngle = parseFloat(motion.spin.keyframes[0].transform.slice("rotate(".length));
+      const fullTurn = parseFloat(motion.spin.keyframes[1].transform.slice("rotate(".length)) - startAngle;
       const angle = sample.ms < motion.startup.duration
         ? startAngle * (sample.ms / motion.startup.duration) ** 2
         : startAngle + fullTurn * (sample.ms - motion.spin.delay) / motion.spin.duration;

@@ -38,13 +38,13 @@ export function loadingRingAnimation(index: number, wide: boolean) {
   return {
     transform: `matrix(0,${size},${size},0,0,0)`,
     startup: {
-      keyframes: [{ rotate: "0rad" }, { rotate: `${angle}rad` }],
+      keyframes: [{ transform: "rotate(0rad)" }, { transform: `rotate(${angle}rad)` }],
       duration: threshold * 1000,
       // x(t) = t and y(t) = t², preserving the original acceleration.
       easing: "cubic-bezier(0.3333333333333333,0,0.6666666666666666,0.3333333333333333)",
     },
     spin: {
-      keyframes: [{ rotate: `${angle}rad` }, { rotate: `${angle + Math.sign(velocity) * 2 * Math.PI}rad` }],
+      keyframes: [{ transform: `rotate(${angle}rad)` }, { transform: `rotate(${angle + Math.sign(velocity) * 2 * Math.PI}rad)` }],
       delay: threshold * 1000,
       duration: 2 * Math.PI / Math.abs(velocity) * 1000,
     },

@@ -1655,6 +1655,11 @@ tbody tr:nth-child(even) {
 .vista-loading-rings.orbit-rings {
   position: absolute;
 }
+.vista-ring-layer {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+}
 .vista-loading-rings img {
   position: absolute;
   inset: 0;

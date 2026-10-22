@@ -64,21 +64,26 @@ function useActive<T extends HTMLElement>(ref: React.RefObject<T | null>, once =
 
 export function VistaLoadingRings({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const layers = useRef<(HTMLImageElement | null)[]>([]);
+  const layers = useRef<(HTMLDivElement | null)[]>([]);
   const animations = useRef<Animation[]>([]);
   const active = useActive(ref);
   useEffect(() => {
-    const created = layers.current.flatMap((image, layer) => {
-      if (!image) return [];
+    const created = layers.current.flatMap((wrapper, layer) => {
+      if (!wrapper) return [];
       const { motion } = ringLayers[layer];
-      const startup = image.animate(motion.startup.keyframes, {
+      const startup = wrapper.animate(motion.startup.keyframes, {
         duration: motion.startup.duration, easing: motion.startup.easing, fill: "forwards",
       });
-      const spin = image.animate(motion.spin.keyframes, {
+      const spin = wrapper.animate(motion.spin.keyframes, {
         delay: motion.spin.delay, duration: motion.spin.duration,
         iterations: Infinity, easing: "linear", fill: "forwards",
       });
-      startup.onfinish = () => startup.cancel();
+      startup.onfinish = () => {
+        startup.cancel();
+        // Refresh after retiring the competing startup effect so the browser
+        // can keep the continuous rotation entirely on the compositor.
+        if (spin.effect instanceof KeyframeEffect) spin.effect.setKeyframes(motion.spin.keyframes);
+      };
       for (const animation of [startup, spin]) {
         animation.pause();
         animation.currentTime = 0;
@@ -90,7 +95,7 @@ export function VistaLoadingRings({ className = "" }: { className?: string }) {
   }, []);
   useEffect(() => {
     for (const animation of animations.current) {
-      // Replaying a finished startup would reset the ring when motion resumes.
+      // A completed startup must stay retired when motion resumes.
       if (animation.playState === "finished" || animation.playState === "idle") continue;
       if (active) animation.play();
       else animation.pause();
@@ -99,10 +104,11 @@ export function VistaLoadingRings({ className = "" }: { className?: string }) {
   return (
     <div ref={ref} className={`vista-loading-rings ${className}`} aria-hidden="true" data-motion-active={active}>
       {ringLayers.map(({ wide, motion }, layer) => {
-        return <img key={layer} ref={(node) => { layers.current[layer] = node; }}
-          className={wide ? "vista-ring-wide" : "vista-ring-thin"}
-          src={`/vista/vista-loading-${wide ? "wide" : "thin"}-mechanical-ring.svg`} alt=""
-          style={{ transform: motion.transform }} />;
+        return <div key={layer} ref={(node) => { layers.current[layer] = node; }} className="vista-ring-layer">
+          <img className={wide ? "vista-ring-wide" : "vista-ring-thin"}
+            src={`/vista/vista-loading-${wide ? "wide" : "thin"}-mechanical-ring.svg`} alt=""
+            style={{ transform: motion.transform }} />
+        </div>;
       })}
     </div>
   );
