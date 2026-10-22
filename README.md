@@ -25,13 +25,13 @@ npm run preview
 
 ## Hosting
 
-The repository is `TheRunaway5/Halo-2-PC-Website`. GitHub Pages is configured for **GitHub Actions** with custom domain **halo2forever.net**. The local workflow builds and deploys `out/` after a future push to `main` or a manual dispatch once the workflow exists remotely. No source commits or pushes were made during initial setup. The website itself remains unpublished until the owner publishes the local work.
+The repository is `TheRunaway5/Halo-2-PC-Website`. GitHub Pages builds and deploys `out/` through **GitHub Actions** on pushes to `main` or manual dispatch, with custom domain **halo2forever.net**. The October 22, 2026 website update was pushed by **TheRunaway5**, and its Pages deployment succeeded. Check the repository's Actions runs for the current deployment revision.
 
-GoDaddy DNS uses the four [documented GitHub Pages addresses](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site): `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` at `@`, and `www` CNAME `therunaway5.github.io`. Existing nameservers, email-related records and domain-connect records are preserved. GitHub’s DNS check passed and Enforce HTTPS is enabled. The first Pages content deployment remains pending because no source push was authorized.
+GoDaddy DNS uses the four [documented GitHub Pages addresses](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site): `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` at `@`, and `www` CNAME `therunaway5.github.io`. Existing nameservers, email-related records and domain-connect records are preserved. GitHub’s DNS check passed and Enforce HTTPS is enabled.
 
 ## Live master integration
 
-A separate Node TypeScript bridge on the existing master host serves `/website/*`. It reads the master's existing SQLite database using `readOnly` and `query_only`. Optional EOS publication uses a Rust SDK worker and a separate writable cache; it never writes the master database. It runs with a read-only filesystem, no Linux capabilities, private Docker networking, bounded memory/CPU and request limits. Credential files in the mounted master volume are masked. Caddy routes the prefix while preserving the game's original routes and WebSockets. The EOS changes are local and require the setup and acceptance steps in [the worker runbook](backend/eos-worker/README.md).
+A separate Node TypeScript bridge on the existing master host serves `/website/*`. It reads the master's existing SQLite database using `readOnly` and `query_only`. EOS publication uses a Rust SDK worker and a separate writable cache; it never writes the master database. It runs with a read-only filesystem, no Linux capabilities, private Docker networking, bounded memory/CPU and request limits. Credential files in the mounted master volume are masked. Caddy routes the prefix while preserving the game's original routes and WebSockets. The profile, population and EOS cache endpoints are deployed; remaining native-client acceptance is described in [the worker runbook](backend/eos-worker/README.md).
 
 Public bridge endpoints:
 

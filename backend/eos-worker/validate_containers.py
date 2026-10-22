@@ -16,10 +16,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sdk-archive', type=Path, required=True)
     parser.add_argument('--master-source', type=Path, required=True)
+    parser.add_argument('--master-catalog', type=Path)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
     if not os.environ.get('HALO2_TEST_SCRATCH'):
         parser.error('Run through Halo-2-Decompiled/tools/run_test.py')
+    for name in ('retail_gathering.json', 'data/retail-launch-2004-rank.json',
+                 'data/title-update-1.5-rank.json'):
+        if not (args.master_source / name).is_file():
+            parser.error('Master source must include its original runtime configuration: ' + name)
+    if args.master_catalog and not args.master_catalog.is_file():
+        parser.error('Master catalog does not exist')
     web = Path(__file__).resolve().parents[2]
     builder = 'h2-eos-check-' + uuid.uuid4().hex[:12]
     images = [builder + ':master', builder + ':website-api']
@@ -64,17 +71,19 @@ def main():
                               '/usr/local/bin/halo2-eos-worker'])
                 if 'not found' in linked.stdout:
                     raise RuntimeError('Missing SDK runtime dependency')
-            master_smoke = '''import asyncio,tempfile,stat
+            master_smoke = '''import asyncio,tempfile,stat,os
 from pathlib import Path
 from aiohttp.test_utils import TestClient,TestServer
 from multiplayer.master_server.service import Settings,create_app
 async def main():
  with tempfile.TemporaryDirectory() as state:
-  app=create_app(Settings(state=Path(state),public_url='https://qualification.invalid',behind_tls_proxy=True))
+  catalog=os.environ.get('H2_QUALIFICATION_CATALOG','')
+  app=create_app(Settings(state=Path(state),public_url='https://qualification.invalid',behind_tls_proxy=True,matchmaking_catalog=catalog))
   async with TestClient(TestServer(app)) as client:
    async with client.get('/v1/health') as response: assert response.status==200
    async with client.get('/v1/online/status') as response:
     data=await response.json();assert response.status==200 and data['online']=={'users':0,'guests':0}
+    if catalog: assert len(data['playlists'])>0
    async with client.get('/v1/auth/eos/jwks') as response:
     data=await response.json();assert response.status==200 and data['keys'][0]['alg']=='RS256'
     assert 'd' not in data['keys'][0]
@@ -82,8 +91,14 @@ async def main():
    async with client.get('/v1/account/profile') as response: assert response.status==401
  print('Master HTTP, population, JWKS, signing-key mode and profile auth passed')
 asyncio.run(main())'''
-            run(['docker', 'run', '--rm', '--network', 'none', '-e', 'H2_EOS_OPENID_AUDIENCE=h2forever-profile-v1',
-                 '--entrypoint', 'python', images[0], '-c', master_smoke])
+            master_command = ['docker', 'run', '--rm', '--network', 'none', '-e',
+                              'H2_EOS_OPENID_AUDIENCE=h2forever-profile-v1']
+            if args.master_catalog:
+                master_command += ['--mount', 'type=bind,src=' + str(args.master_catalog.resolve()) +
+                                   ',dst=/qualification-playlists.json,readonly', '-e',
+                                   'H2_QUALIFICATION_CATALOG=/qualification-playlists.json']
+                report['catalog_sha256'] = hashlib.sha256(args.master_catalog.read_bytes()).hexdigest()
+            run(master_command + ['--entrypoint', 'python', images[0], '-c', master_smoke])
             web_smoke = '''import assert from 'node:assert/strict';
 import {createServer} from 'node:http';import {once} from 'node:events';import {DatabaseSync} from 'node:sqlite';
 const db=new DatabaseSync('/tmp/qualification.sqlite3');db.close();

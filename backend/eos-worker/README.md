@@ -26,9 +26,20 @@ decreases/clears, all nine leaderboard queries and a populated ranked board
 whose displayed level decreased. Qualification PUIDs have no master/public
 alias and remain excluded from the website.
 
-Public OpenID trust, real account binding and production rollout are still
-pending. The game client retains its Sessions-only policy. No production data
-has been migrated and no deployment or source push was performed for this change.
+The production master and website API are deployed. The OpenID ID Token
+provider is mapped to Live, and the public JWKS endpoint is available. Real SDK
+qualification accepted a JWT signed by the production master and verified the
+returned EOS ID token through the production trusted worker, matching its
+account subject and exact product/client/sandbox/deployment scope. No master
+account row was created by this qualification.
+
+The website was published by TheRunaway5 on October 22, 2026. Its public API
+serves all nine EOS leaderboard caches and live total/per-playlist population;
+the deployed page rendered the counts with no browser console warnings/errors.
+Real player login/profile binding from a delivered native client and two-machine
+relay gameplay remain acceptance work. The game client retains its Sessions-only
+policy. Additive profile/EOS schema changes are deployed; legacy join dates stay
+unknown.
 
 Both glibc deployment images built and passed isolated smoke checks, including
 master health/population/JWKS/profile authorization and the website HTTP bridge.
@@ -217,14 +228,21 @@ python3 /path/Halo-2-Decompiled/tools/run_test.py -- python3 \
 ```
 
 Use the merged source or a reviewed overlay against the exact production
-baseline when the shared checkout contains other active work. This creates a
+baseline when the shared checkout contains other active work. Include the
+master's original `retail_gathering.json` and rank data files. Pass
+`--master-catalog /private/current-playlists.json` to exercise the actual catalog
+in the disposable container. An initial production attempt omitted the original
+gathering configuration and rolled back on failed health checks; adding the
+unchanged file and testing startup with the live catalog resolved it. The
+validator now refuses source contexts missing those runtime configurations.
+This creates a
 private named builder, builds both images, checks SDK dynamic dependencies and
 HTTP behavior without network access, then removes its images, builder and
 extracted SDK. It does not update running production services.
 
 Server ingest/read-back, repeated absolute publication, clearing customization
 and lowering a displayed rank have passed live qualification. Before cutover,
-verify real OpenID login/proof binding, delayed publication, populated playlist
+verify a real player's login/profile binding, delayed publication, populated playlist
 isolation, tied ranks, offline recovery and two-machine relay gameplay. Back up the master
 DB/signing key and retain a rollback image. Existing device-only EOS accounts
 need an explicit recovery/migration plan before anyone relies on them.
