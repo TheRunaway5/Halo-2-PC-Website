@@ -5,3 +5,5 @@ out/
 !.env.example
 *.tsbuildinfo
 .local/
+
+backend/eos-worker/target/

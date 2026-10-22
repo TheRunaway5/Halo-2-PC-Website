@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "statistics": [
+    {
+      "name": "H2_RANKED_LEVEL",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_CASUAL_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_RANKED_PARTY_LEVEL",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_CASUAL_PARTY_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_MINOR_CLAN_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_MAJOR_CLAN_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_CASUAL_TEAM_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_RANKED_TEAM_LEVEL",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_ACTION_SACK_KILLS",
+      "aggregation": "MAX"
+    }
+  ]
+}

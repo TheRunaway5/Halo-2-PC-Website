@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "statistics": [
+    {
+      "name": "H2_MATCHES",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_WINS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_KILLS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_DEATHS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_ASSISTS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_SHOTS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_HITS",
+      "aggregation": "MAX"
+    },
+    {
+      "name": "H2_JOINED_DAY",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_JOINED_SECOND",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_JOINED_KNOWN",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_SPECIES",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_COLOR_0",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_COLOR_1",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_COLOR_2",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_COLOR_3",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_EMBLEM_FOREGROUND",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_EMBLEM_BACKGROUND",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_EMBLEM_FLAGS",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_EMBLEM_RESERVED",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_TAG_0",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_TAG_1",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_TAG_2",
+      "aggregation": "LATEST"
+    },
+    {
+      "name": "H2_TAG_3",
+      "aggregation": "LATEST"
+    }
+  ]
+}

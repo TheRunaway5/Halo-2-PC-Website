@@ -1,0 +1,56 @@
+[
+  {
+    "playlist": "ranked",
+    "board": "H2_RANKED_LEVEL",
+    "stat": "H2_RANKED_LEVEL",
+    "metric": "level"
+  },
+  {
+    "playlist": "casual",
+    "board": "H2_CASUAL_KILLS",
+    "stat": "H2_CASUAL_KILLS",
+    "metric": "kills"
+  },
+  {
+    "playlist": "ranked-party",
+    "board": "H2_RANKED_PARTY_LEVEL",
+    "stat": "H2_RANKED_PARTY_LEVEL",
+    "metric": "level"
+  },
+  {
+    "playlist": "casual-party",
+    "board": "H2_CASUAL_PARTY_KILLS",
+    "stat": "H2_CASUAL_PARTY_KILLS",
+    "metric": "kills"
+  },
+  {
+    "playlist": "minor-clan",
+    "board": "H2_MINOR_CLAN_KILLS",
+    "stat": "H2_MINOR_CLAN_KILLS",
+    "metric": "kills"
+  },
+  {
+    "playlist": "major-clan",
+    "board": "H2_MAJOR_CLAN_KILLS",
+    "stat": "H2_MAJOR_CLAN_KILLS",
+    "metric": "kills"
+  },
+  {
+    "playlist": "casual-team",
+    "board": "H2_CASUAL_TEAM_KILLS",
+    "stat": "H2_CASUAL_TEAM_KILLS",
+    "metric": "kills"
+  },
+  {
+    "playlist": "ranked-team",
+    "board": "H2_RANKED_TEAM_LEVEL",
+    "stat": "H2_RANKED_TEAM_LEVEL",
+    "metric": "level"
+  },
+  {
+    "playlist": "action-sack",
+    "board": "H2_ACTION_SACK_KILLS",
+    "stat": "H2_ACTION_SACK_KILLS",
+    "metric": "kills"
+  }
+]

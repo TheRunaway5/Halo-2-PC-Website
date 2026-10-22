@@ -4,7 +4,6 @@ import type {
   Player,
   Report,
   ServiceStatus,
-  Sort,
 } from "./types";
 const base = (
   process.env.NEXT_PUBLIC_MASTER_API_URL ||
@@ -62,9 +61,10 @@ export const api = {
     ),
   report: (id: string, signal?: AbortSignal) =>
     get<Report>(`/v1/history/matches/${encodeURIComponent(id)}`, signal),
-  leaders: (sort: Sort, playlist: string, offset = 0, signal?: AbortSignal) =>
+  playlists: (signal?: AbortSignal) => get<{playlists:string[]}>("/v1/history/top25",signal),
+  leaders: (playlist: string, signal?: AbortSignal) =>
     get<Leaderboard>(
-      `/v1/history/leaderboard?sort=${sort}&limit=25&offset=${offset}${playlist ? `&playlist=${encodeURIComponent(playlist)}` : ""}`,
+      `/v1/history/top25?playlist=${encodeURIComponent(playlist)}`,
       signal,
     ),
 };

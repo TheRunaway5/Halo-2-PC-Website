@@ -30,6 +30,27 @@ export function loadingRingTransform(seconds: number, index: number, wide: boole
   return `matrix(${loadingRingPose(seconds, index, wide).matrix.join(",")},0,0)`;
 }
 
+/** Browser-owned rotation with the same quadratic startup and reflected UVs. */
+export function loadingRingAnimation(index: number, wide: boolean) {
+  const threshold = index * 0.5 + 1;
+  const { size, angle } = loadingRingPose(threshold, index, wide);
+  const velocity = Math.fround(1.3) * Math.fround(wide ? -0.20943951606750488 : 0.12566371262073517) * index * Math.fround(1.1);
+  return {
+    transform: `matrix(0,${size},${size},0,0,0)`,
+    startup: {
+      keyframes: [{ rotate: "0rad" }, { rotate: `${angle}rad` }],
+      duration: threshold * 1000,
+      // x(t) = t and y(t) = t², preserving the original acceleration.
+      easing: "cubic-bezier(0.3333333333333333,0,0.6666666666666666,0.3333333333333333)",
+    },
+    spin: {
+      keyframes: [{ rotate: `${angle}rad` }, { rotate: `${angle + Math.sign(velocity) * 2 * Math.PI}rad` }],
+      delay: threshold * 1000,
+      duration: 2 * Math.PI / Math.abs(velocity) * 1000,
+    },
+  };
+}
+
 /** Original 640px menu coordinate system scales to the responsive viewport. */
 export function introKeyframes(track: VistaIntroTrack, viewportWidth: number) {
   return data.intro[track].keys.map((key) => ({

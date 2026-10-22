@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fixture from "./fixtures/vista-loading.json" with { type: "json" };
-import { introKeyframes, loadingRingPose, vistaMotion } from "../lib/vista-motion.ts";
+import { introKeyframes, loadingRingAnimation, loadingRingPose, vistaMotion } from "../lib/vista-motion.ts";
 
 test("six ring layers keep a fixed diameter while matching original rotation through one minute", () => {
   // Independent expected positions/UVs copied from the existing original executable oracle,
@@ -24,6 +24,31 @@ test("six ring layers keep a fixed diameter while matching original rotation thr
         const [a, b, c, d] = pose.matrix.map((n) => n / pose.size);
         near(0.5 + a * dx + c * dy, u, `${context} U`);
         near(0.5 + b * dx + d * dy, v, `${context} V`);
+      });
+    });
+  }
+});
+
+test("browser animation preserves startup, rotation direction, diameter and full turns against the original oracle", () => {
+  for (const sample of fixture.cases) {
+    sample.rings.forEach((vertices, layer) => {
+      const motion = loadingRingAnimation(Math.floor(layer / 2) + 1, layer % 2 === 1);
+      const startAngle = parseFloat(motion.spin.keyframes[0].rotate);
+      const fullTurn = parseFloat(motion.spin.keyframes[1].rotate) - startAngle;
+      const angle = sample.ms < motion.startup.duration
+        ? startAngle * (sample.ms / motion.startup.duration) ** 2
+        : startAngle + fullTurn * (sample.ms - motion.spin.delay) / motion.spin.duration;
+      const size = Number(motion.transform.match(/matrix\(0,([^,]+)/)![1]);
+      const corners = [[-0.5, -0.5], [-0.5, 0.5], [0.5, 0.5], [0.5, -0.5]];
+      assert.ok(Math.abs(Math.abs(fullTurn) - 2 * Math.PI) < 1e-12);
+      assert.equal(Math.sign(fullTurn), layer % 2 ? -1 : 1);
+      assert.equal(size, Math.fround(0.936 / (Math.floor(layer / 2) + 1)));
+      vertices.forEach(([, , u, v], corner) => {
+        const [x, y] = corners[corner];
+        const actualU = 0.5 - Math.sin(angle) * x + Math.cos(angle) * y;
+        const actualV = 0.5 + Math.cos(angle) * x + Math.sin(angle) * y;
+        assert.ok(Math.abs(actualU - u) < 0.00001, `${sample.ms}ms layer ${layer} U`);
+        assert.ok(Math.abs(actualV - v) < 0.00001, `${sample.ms}ms layer ${layer} V`);
       });
     });
   }

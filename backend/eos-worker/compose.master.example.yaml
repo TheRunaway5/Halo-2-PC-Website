@@ -1,0 +1,10 @@
+# Merge after the game repo's compose.production.yaml + matchmaking override.
+services:
+  directory:
+    image: halo2-master-eos:local
+    environment:
+      H2_EOS_OPENID_AUDIENCE: h2forever-profile-v1
+      H2_EOS_SERVER_CONFIG: /secrets/eos-server.env
+      H2_EOS_SERVER_CACHE_DIR: /state/eos-sdk-cache
+    volumes:
+      - ${EOS_SERVER_CONFIG:?Set EOS_SERVER_CONFIG}:/secrets/eos-server.env:ro

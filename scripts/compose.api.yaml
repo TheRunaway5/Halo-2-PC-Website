@@ -20,6 +20,7 @@ services:
       - /dev/null:/state/admin-token:ro
       - /dev/null:/state/master-key.json:ro
       - /dev/null:/state/peers.json:ro
+      - /dev/null:/state/eos-openid-key.pem:ro
     tmpfs:
       - /state/a:ro,noexec,nosuid,size=4k
       - /state/b:ro,noexec,nosuid,size=4k

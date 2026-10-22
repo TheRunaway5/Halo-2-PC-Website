@@ -1,14 +1,19 @@
 import { createServer } from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { currentSkill, skillsAtMatch } from "./public-ranks.ts";
-import { leaderboard } from "./leaderboard-store.ts";
+import { eosEnvironment } from "./eos-service.ts";
+import { publicSteam } from "./public-steam.ts";
+import { statusService } from "./status-service.ts";
 const port = Number(process.env.PORT ?? 8090);
 const master = process.env.MASTER_INTERNAL_URL ?? "http://directory:8080";
+const serviceStatus = statusService(master);
 const db = new DatabaseSync(
   process.env.MASTER_DATABASE ?? "/state/registry.sqlite3",
   { readOnly: true },
 );
 db.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=3000;");
+const eos=eosEnvironment(db);
+eos?.start();
 const origins = new Set(
   (
     process.env.WEBSITE_ORIGINS ??
@@ -17,7 +22,7 @@ const origins = new Set(
 );
 const budgets = new Map<string, { reset: number; count: number }>();
 const publicHistory =
-  /^\/v1\/history\/(players|players\/[a-f0-9-]{36}\/matches|matches\/[a-f0-9-]{36})$/;
+  /^\/v1\/history\/(players|players\/[a-f0-9-]{36}\/(matches|profile)|matches\/[a-f0-9-]{36})$/;
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -62,43 +67,16 @@ const server = createServer(async (req, res) => {
   }
   try {
     const url = new URL(req.url!, "http://website-api");
-    if (url.pathname === "/v1/history/leaderboard") {
-      try {
-        reply(200, leaderboard(db, url.searchParams));
-      } catch (error) {
-        if (error instanceof Error && error.message.startsWith("Invalid"))
-          reply(400, { error: error.message });
-        else throw error;
-      }
-      return;
+    if(url.pathname==="/v1/history/top25") {
+      if(!url.search){reply(200,{playlists:eos?.boards.map(b=>b.playlist)??[]});return;}
+      if([...url.searchParams.keys()].some(k=>k!=="playlist")||url.searchParams.getAll("playlist").length!==1){reply(400,{error:"Choose one playlist"});return;}
+      const board=eos?.top(url.searchParams.get("playlist")!);
+      if (board) for (const player of board.players)
+        Object.assign(player, publicSteam(db, String(player.id)));
+      reply(board?200:503,board??{error:"EOS standings are not available yet"});return;
     }
     if (url.pathname === "/v1/website/status" && !url.search) {
-      const responses = await Promise.all(
-        ["/v1/health", "/v1/servers"].map((path) =>
-          fetch(master + path, {
-            signal: AbortSignal.timeout(8000),
-            redirect: "error",
-          }),
-        ),
-      );
-      if (responses.some((r) => !r.ok)) {
-        reply(502, { error: "Master unavailable" });
-        return;
-      }
-      const [health, list] = (await Promise.all(
-        responses.map((r) => r.json()),
-      )) as [
-        { ready: boolean; matchmaking_players?: number },
-        { servers: { players: number }[] },
-      ];
-      reply(200, {
-        ready: health.ready,
-        matchmaking_players: Number.isInteger(health.matchmaking_players)
-          ? health.matchmaking_players
-          : null,
-        servers: list.servers.length,
-        players: list.servers.reduce((n, s) => n + s.players, 0),
-      });
+      reply(200, await serviceStatus());
       return;
     }
     if (!publicHistory.test(url.pathname) || url.search.length > 1000) {
@@ -115,14 +93,25 @@ const server = createServer(async (req, res) => {
       const data = await upstream.json();
       if (upstream.ok) {
         if (url.pathname === "/v1/history/players")
-          for (const player of data.players)
+          for (const player of data.players) {
             player.skill = currentSkill(db, player.id);
-        else if (url.pathname.includes("/players/"))
+            Object.assign(player, publicSteam(db, player.id));
+          }
+        else if(url.pathname.endsWith("/profile")) {
+          Object.assign(data, publicSteam(db, data.id));
+          eos?.enrich(data);
+        }
+        else if (url.pathname.includes("/players/")) {
           data.player.skill = currentSkill(db, data.player.id);
+          Object.assign(data.player, publicSteam(db, data.player.id));
+          eos?.enrich(data.player);
+        }
         else {
           const ranks = skillsAtMatch(db, data.id);
-          for (const player of data.players)
+          for (const player of data.players) {
             player.skill_at_match = ranks.get(player.id) ?? null;
+            Object.assign(player, publicSteam(db, player.id));
+          }
         }
       }
       reply(upstream.status, data);
@@ -140,6 +129,7 @@ server.listen(port, process.env.HOST ?? "0.0.0.0", () =>
 for (const signal of ["SIGTERM", "SIGINT"] as const)
   process.on(signal, () =>
     server.close(() => {
+      eos?.close();
       db.close();
       process.exit(0);
     }),

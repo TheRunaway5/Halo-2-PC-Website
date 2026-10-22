@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
+import { SteamProfileLink } from "./steam-profile-link";
 import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
@@ -98,7 +99,7 @@ export function PlayerSearch() {
       <SectionTitle
         number="02"
         eyebrow="PLAYER SERVICE RECORDS"
-        title={history ? history.player.screen_name : "Your story. On record."}
+        title={history ? <span className="player-name">{history.player.screen_name}<SteamProfileLink player={history.player} /></span> : "Your story. On record."}
       >
         <span className="page-tag">
           <UserRound size={15} /> PLAYER ARCHIVE
@@ -146,25 +147,23 @@ export function PlayerSearch() {
             </EmptyState>
           ) : results?.length === 0 ? (
             <EmptyState title="No service record found.">
-              Check the Discord username and try again. Players appear after
-              their first recorded match.
+              Check the player’s current verified Discord username and try again.
             </EmptyState>
           ) : results ? (
             <div className="search-results">
               {results.map((p) => (
-                <Link key={p.id} href={playerLink(p.id)}>
-                  <span className="player-emblem">
+                <div className="search-result" key={p.id}>
+                  <Link className="player-emblem" href={playerLink(p.id)} aria-label={`View ${p.screen_name}'s service record`}>
                     {p.screen_name.slice(0, 1).toUpperCase()}
-                  </span>
+                  </Link>
                   <div>
-                    <h2>{p.screen_name}</h2>
-                    <p>@{p.discord_username}</p>
+                    <h2 className="player-name"><Link href={playerLink(p.id)}>{p.screen_name}</Link><SteamProfileLink player={p} /></h2>
                   </div>
                   <RankBadge skill={p.skill} />
-                  <span>
+                  <Link className="search-result-action" href={playerLink(p.id)}>
                     View service record <ArrowUpRight size={17} />
-                  </span>
-                </Link>
+                  </Link>
+                </div>
               ))}
             </div>
           ) : (
@@ -181,8 +180,7 @@ export function PlayerSearch() {
           ) : history ? (
             <>
               <p className="page-intro">
-                @{history.player.discord_username}{" "}
-                <span className="muted">/</span> Recorded match history
+                Recorded match history
               </p>
               <VistaIntro className="profile-strip" track="panel">
                 <span className="player-emblem large">
@@ -190,13 +188,28 @@ export function PlayerSearch() {
                 </span>
                 <div>
                   <p className="eyebrow">SERVICE RECORD</p>
-                  <h2>{history.player.screen_name}</h2>
+                  <h2 className="player-name">{history.player.screen_name}<SteamProfileLink player={history.player} /></h2>
+                  <p>
+                    {history.player.service_tag ? `[${history.player.service_tag}] · ` : ""}
+                    {history.player.appearance ? (history.player.appearance.species === "elite" ? "Elite" : "Spartan") : "Appearance not recorded"}
+                    {" · "}{history.player.joined_at ? `Joined ${new Intl.DateTimeFormat("en-US",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(history.player.joined_at*1000))}` : "Join date not recorded"}
+                  </p>
                 </div>
                 <RankBadge skill={history.player.skill} large />
                 <Link className="text-link" href="/players/">
                   Find another player <Search size={15} />
                 </Link>
               </VistaIntro>
+              {history.player.statistics && <div className="profile-details data-panel">
+                <div className="panel-caption"><span>CAREER STATISTICS</span><span className="muted">{history.player.statistics_source === "eos" ? "EOS" : "RECORDED RESULTS"}</span></div>
+                <dl>
+                  <div><dt>Matches</dt><dd>{history.player.statistics.matches.toLocaleString()}</dd></div>
+                  <div><dt>Kills / Deaths</dt><dd>{history.player.statistics.kills.toLocaleString()} / {history.player.statistics.deaths.toLocaleString()}</dd></div>
+                  <div><dt>K/D</dt><dd>{ratio(history.player.statistics.kills,history.player.statistics.deaths)}</dd></div>
+                  <div><dt>Shot accuracy</dt><dd>{history.player.statistics.shots > 0 ? `${(100*history.player.statistics.hits/history.player.statistics.shots).toFixed(1)}%` : "—"}</dd></div>
+                </dl>
+                {!history.player.statistics.accuracy_complete && <p className="data-note">Accuracy covers {history.player.statistics.accuracy_matches} matches with detailed weapon data.</p>}
+              </div>}
               <div className="data-panel">
                 <div className="panel-caption">
                   <span>POSTGAME CARNAGE REPORTS</span>

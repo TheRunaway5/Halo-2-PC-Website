@@ -1,0 +1,10 @@
+.git
+.local
+.next
+out
+node_modules
+**/target
+.env*
+**/.env*
+**/*.pem
+**/*.key

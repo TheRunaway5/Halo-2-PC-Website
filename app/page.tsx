@@ -156,8 +156,8 @@ export default function Home() {
                 <p className="eyebrow">COMMUNITY STANDINGS</p>
                 <h3>See who’s leading.</h3>
                 <p>
-                  Explore all-time combat statistics from the master server’s
-                  recorded matches.
+                  Explore the top 25 players in each playlist, based on
+                  recorded match results.
                 </p>
               </div>
               <ArrowUpRight size={26} />

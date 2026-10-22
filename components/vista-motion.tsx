@@ -2,10 +2,13 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
-import { introKeyframes, loadingRingTransform, vistaMotion, type VistaIntroTrack } from "@/lib/vista-motion";
+import { introKeyframes, loadingRingAnimation, vistaMotion, type VistaIntroTrack } from "@/lib/vista-motion";
 
 const MotionContext = createContext({ enabled: false, ready: false, reduced: false, toggle: () => {} });
 const preferenceKey = "halo2-motion-paused";
+const ringLayers = [1, 2, 3].flatMap(index => [false, true].map(wide => ({
+  wide, motion: loadingRingAnimation(index, wide),
+})));
 
 export function VistaMotionProvider({ children }: { children: React.ReactNode }) {
   const [paused, setPaused] = useState(false);
@@ -62,31 +65,45 @@ function useActive<T extends HTMLElement>(ref: React.RefObject<T | null>, once =
 export function VistaLoadingRings({ className = "" }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const layers = useRef<(HTMLImageElement | null)[]>([]);
-  const elapsed = useRef(0);
+  const animations = useRef<Animation[]>([]);
   const active = useActive(ref);
   useEffect(() => {
-    if (!active) return;
-    let frame = 0, previous = performance.now();
-    const update = (now: number) => {
-      elapsed.current += (now - previous) / 1000;
-      previous = now;
-      layers.current.forEach((image, layer) => {
-        if (image) image.style.transform = loadingRingTransform(elapsed.current, Math.floor(layer / 2) + 1, layer % 2 === 1);
+    const created = layers.current.flatMap((image, layer) => {
+      if (!image) return [];
+      const { motion } = ringLayers[layer];
+      const startup = image.animate(motion.startup.keyframes, {
+        duration: motion.startup.duration, easing: motion.startup.easing, fill: "forwards",
       });
-      frame = requestAnimationFrame(update);
-    };
-    frame = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frame);
+      const spin = image.animate(motion.spin.keyframes, {
+        delay: motion.spin.delay, duration: motion.spin.duration,
+        iterations: Infinity, easing: "linear", fill: "forwards",
+      });
+      startup.onfinish = () => startup.cancel();
+      for (const animation of [startup, spin]) {
+        animation.pause();
+        animation.currentTime = 0;
+      }
+      return [startup, spin];
+    });
+    animations.current = created;
+    return () => { created.forEach(animation => animation.cancel()); animations.current = []; };
+  }, []);
+  useEffect(() => {
+    for (const animation of animations.current) {
+      // Replaying a finished startup would reset the ring when motion resumes.
+      if (animation.playState === "finished" || animation.playState === "idle") continue;
+      if (active) animation.play();
+      else animation.pause();
+    }
   }, [active]);
   return (
     <div ref={ref} className={`vista-loading-rings ${className}`} aria-hidden="true" data-motion-active={active}>
-      {[1, 2, 3].flatMap((index) => [false, true].map((wide) => {
-        const layer = (index - 1) * 2 + Number(wide);
+      {ringLayers.map(({ wide, motion }, layer) => {
         return <img key={layer} ref={(node) => { layers.current[layer] = node; }}
           className={wide ? "vista-ring-wide" : "vista-ring-thin"}
           src={`/vista/vista-loading-${wide ? "wide" : "thin"}-mechanical-ring.svg`} alt=""
-          style={{ transform: loadingRingTransform(0, index, wide) }} />;
-      }))}
+          style={{ transform: motion.transform }} />;
+      })}
     </div>
   );
 }

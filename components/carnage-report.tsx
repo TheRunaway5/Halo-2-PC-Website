@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SteamProfileLink } from "./steam-profile-link";
 import { RankBadge } from "./rank-badge";
 import { VistaIntro } from "./vista-motion";
 import { ArrowLeft, Download, Medal } from "lucide-react";
@@ -177,16 +178,14 @@ export function CarnageReport() {
                           )}
                         </td>
                         <td>
-                          <Link className="match-name" href={playerLink(p.id)}>
+                          <div className="player-name">
+                            <Link className="match-name" href={playerLink(p.id)}>
                             <strong>
                               {p.screen_name_at_match ?? p.screen_name}
                             </strong>
-                            <small>
-                              @
-                              {p.discord_username_at_match ??
-                                p.discord_username}
-                            </small>
-                          </Link>
+                            </Link>
+                            <SteamProfileLink player={p} />
+                          </div>
                         </td>
                         <td>
                           <RankBadge skill={p.skill_at_match} />

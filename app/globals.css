@@ -376,6 +376,7 @@ p {
 }
 .network-strip {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 30px;
   border-bottom: 1px solid var(--line);
@@ -409,6 +410,26 @@ p {
   letter-spacing: 0.4px;
   font-size: 11px;
 }
+.playlist-population {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+  font-size: 12px;
+  color: #b1c4d4;
+}
+.playlist-population summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.playlist-population p {
+  max-width: 760px;
+  line-height: 1.6;
+  margin: 16px 0;
+}
+.population-table { overflow-x: auto; }
+.population-table table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.population-table caption { text-align: left; color: #7692aa; padding: 0 0 14px; }
+.population-table th, .population-table td { text-align: right; padding: 12px 8px; border-top: 1px solid var(--line); font-weight: 400; }
+.population-table th:first-child { text-align: left; }
 .status-dot {
   height: 5px;
   width: 5px;
@@ -795,6 +816,33 @@ tbody tr:nth-child(even) {
 .match-name:hover strong {
   color: #a6ddff;
 }
+.player-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.steam-profile-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #85a5bf;
+  vertical-align: middle;
+}
+.steam-profile-link:hover,
+.steam-profile-link:focus-visible {
+  color: #c6e9ff;
+  background: #a6ddff14;
+}
+.steam-profile-link:focus-visible {
+  outline: 2px solid #a6ddff;
+  outline-offset: 2px;
+}
 .player-emblem {
   display: grid;
   place-items: center;
@@ -940,7 +988,7 @@ tbody tr:nth-child(even) {
   border-top: 1px solid #35516b;
   margin-top: 40px;
 }
-.search-results > a {
+.search-result {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -955,7 +1003,7 @@ tbody tr:nth-child(even) {
   font-size: 12px;
   margin-top: 6px;
 }
-.search-results > a > span:last-child {
+.search-result-action {
   margin-left: auto;
   font-size: 12px;
   display: flex;
@@ -975,6 +1023,10 @@ tbody tr:nth-child(even) {
   font-size: 24px;
   margin-top: 7px;
 }
+.profile-details { margin: 1.25rem 0; }
+.profile-details dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 1.5rem; padding: 1.5rem; }
+.profile-details dt { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
+.profile-details dd { margin: .5rem 0 0; font-size: 1.15rem; }
 .profile-strip .text-link {
   margin-left: auto;
 }
@@ -1516,12 +1568,12 @@ tbody tr:nth-child(even) {
     font-size: 7px;
     letter-spacing: 2px;
   }
-  .search-results > a {
+  .search-result {
     padding: 22px 15px;
     gap: 15px;
     flex-wrap: wrap;
   }
-  .search-results > a > span:last-child {
+  .search-result-action {
     width: 100%;
     margin-left: 50px;
     font-size: 10px;

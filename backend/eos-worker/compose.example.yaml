@@ -1,0 +1,22 @@
+# Merge after scripts/compose.api.yaml. This preserves its private network,
+# read-only master volume, key masks and existing Caddy routing.
+services:
+  website-api:
+    image: halo2-website-eos:local
+    build:
+      context: ..
+      dockerfile: backend/eos-worker/Dockerfile
+      target: website-api
+      additional_contexts:
+        eos-sdk: ${EOS_SDK_DIRECTORY:?Set EOS_SDK_DIRECTORY to the licensed SDK directory}
+    mem_limit: 384m
+    environment:
+      H2_EOS_SERVER_CONFIG: /secrets/eos-server.env
+      H2_EOS_SERVER_CACHE_DIR: /eos-cache/sdk
+      H2_EOS_WEB_STATE: /eos-cache/public.sqlite3
+      H2_EOS_LEADERBOARDS_FILE: /config/leaderboards.json
+    volumes:
+      - /dev/null:/state/eos-openid-key.pem:ro
+      - ${EOS_SERVER_CONFIG:?Set EOS_SERVER_CONFIG}:/secrets/eos-server.env:ro
+      - ${EOS_LEADERBOARDS_FILE:?Set EOS_LEADERBOARDS_FILE}:/config/leaderboards.json:ro
+      - ${EOS_CACHE_DIRECTORY:?Create EOS_CACHE_DIRECTORY owned by uid 10001}:/eos-cache
