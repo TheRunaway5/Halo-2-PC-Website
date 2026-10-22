@@ -57,15 +57,45 @@
       "sessions": true,
       "hosts": "Linux PC and public SSH server",
       "scratch_removed": true
-    }
+    },
+    "signed_couch_profile_worker": true,
+    "changed_profile_ui_syntax": true
   },
   "pending": [
     "Delivered client runtime qualification",
     "Real player account linkage and completed match publication",
     "Two consumer networks and microphone playback",
     "Complete-world host migration",
-    "Legacy transport removal",
-    "Independent signed-in couch profile synchronization qualification"
+    "Legacy transport removal"
   ],
-  "transport_fix": "Rust retains up to 32 early SDK requests for 30 seconds and accepts only after an authenticated roster binding."
+  "transport_fix": "Rust retains up to 32 early SDK requests for 30 seconds and accepts only after an authenticated roster binding.",
+  "client_delivery": {
+    "installed": false,
+    "source_compile_and_launcher_checks_passed": true,
+    "frame_cases_passed": 8,
+    "frame_cases_total": 12,
+    "failures": {
+      "ascension": "startup timeout",
+      "beavercreek": "startup timeout",
+      "dune": "zero submitted frames"
+    },
+    "diagnostic_interruption": "coagulation with one local player; two/four-player Coagulation passed",
+    "prior_runtime_also_fails_ascension": true,
+    "selected_runtime_preserved": true,
+    "scratch_and_unqualified_candidate_removed": true,
+    "large_test_artifacts_retained": false,
+    "isolated_display_reference": {
+      "runtime": "previously selected client without EOS",
+      "gpu": "NVIDIA GeForce RTX 5080",
+      "frame_count": 4,
+      "timeout_seconds": 180,
+      "ascension_passed": true,
+      "ascension_seconds": 117.228,
+      "dune_passed": true,
+      "dune_seconds": 69.43,
+      "root_cause_confirmed": false,
+      "scratch_removed": true
+    },
+    "isolated_eos_candidate_qualification": "running"
+  }
 }

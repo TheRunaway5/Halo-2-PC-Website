@@ -283,3 +283,18 @@ request arrived before its authenticated roster binding. Pending requests are
 bounded to 32, expire after 30 seconds, and grant no access until their PUID is
 bound to an admitted physical slot. The game runtime qualification includes
 that fix. Add `--allow-direct` to the command above to test normal routing.
+
+The client also implements separate profile synchronization for authenticated
+couch players, excluding guests and duplicate local sign-ins. Its primary sync
+is pinned to the signed-in host profile. Account regression and UI translation-unit
+syntax checks passed. The complete client and launcher builds passed, but runtime
+promotion was withheld: eight of twelve map/frame cases passed; Ascension and
+Beaver Creek timed out, Dune submitted zero frames, and one-player Coagulation
+was interrupted for diagnosis (its two/four-player cases passed). The previously
+selected client, without EOS linked, also failed Ascension on the desktop.
+That same client subsequently passed Ascension (117 seconds) and Dune (69 seconds)
+on an isolated Xvfb display using the NVIDIA GPU and the same four-frame CLI and
+180-second budget. This narrows the diagnostic; it does not establish a root
+cause or qualify the EOS candidate. A fresh EOS build is running the full matrix
+on an isolated display. The previous launcher selection is preserved; the first
+failed candidate and all of its owned build artifacts were removed.
