@@ -36,8 +36,12 @@ account row was created by this qualification.
 The website was published by TheRunaway5 on October 22, 2026. Its public API
 serves all nine EOS leaderboard caches and live total/per-playlist population;
 the deployed page rendered the counts with no browser console warnings/errors.
+The master now also accepts the EOS v13 session/peer handoff in production.
+Its three-file overlay passed 23 scoped Python checks and actual native SDK
+qualification against the exact deployed source, including forced relay, eight
+seats and signed synthetic voice packets. See [the transport release receipt](config/transport-release.json).
 Real player login/profile binding from a delivered native client and two-machine
-relay gameplay remain acceptance work. The game client retains its Sessions-only
+playable relay gameplay remain acceptance work. The game client retains its Sessions-only
 policy. Additive profile/EOS schema changes are deployed; legacy join dates stay
 unknown.
 
@@ -254,3 +258,28 @@ queue-only tests are superseded by the canonical master population API. Full car
 because they are still required. The legacy direct-peer transport is still the
 currently deployed default and can be removed only after EOS transport cutover
 and runtime verification; deleting it now would break existing clients.
+
+## Cross-host transport qualification
+
+The optional `validate_wan.py` helper builds the current game Rust bridge against
+the licensed SDK on a specified SSH Docker host. It exchanges 1,404-byte packets
+through forced Epic relay and EOS Sessions with this Linux PC. Generated device
+state, credentials, binaries, builder and image are private and disposable. It
+creates anonymous EOS qualification users, with no master account binding or
+statistics publication. It is not two-consumer-NAT or playable-game acceptance.
+
+```bash
+python3 /path/to/game/tools/run_test.py -- python3 backend/eos-worker/validate_wan.py \
+  --game-root /path/to/game --sdk-archive /private/EOS-SDK.zip \
+  --game-config /private/game-client.env --host your-ssh-host \
+  --report .local/validation/eos-wan.json
+```
+
+The October 22 WAN qualification passed in both modes: forced relay received
+273-293 intact packets per peer; normal routing selected direct transport and
+received 284-287 packets per peer. All packets were 1,404 bytes, with EOS Sessions
+enabled. This exposed and fixed a Rust ordering race where an SDK connection
+request arrived before its authenticated roster binding. Pending requests are
+bounded to 32, expire after 30 seconds, and grant no access until their PUID is
+bound to an admitted physical slot. The game runtime qualification includes
+that fix. Add `--allow-direct` to the command above to test normal routing.
