@@ -310,3 +310,9 @@ invalidation and expiry. The actual image passed cache and snapshot checks, then
 deployed with a SQLite backup and health rollback. This saves repeated work on
 the master; it does not move Halo rank calculations or full carnage storage to
 Epic. The source overlay is [profile-read-cache.patch](profile-read-cache.patch).
+
+Image `halo2-master-eos:20261023T000037Z-career-indexes` additionally indexes
+career accuracy and report coverage by player. SQLite previously scanned every
+player's weapon rows; the actual image now uses player-scoped index searches for
+both queries. All 26 scoped tests passed. The same patch contains the two index
+additions; no carnage rows or rank rules change.
