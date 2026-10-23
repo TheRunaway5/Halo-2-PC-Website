@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "image": "halo2-master-eos:20261023T031806Z-social",
+  "rollback_image": "halo2-master-eos:20261023T000037Z-career-indexes",
+  "deployed_hashes": {
+    "service.py": "3439e3e931be24ccb136a7fdfe55be2baa988f7b6646ab429950c0098db70424",
+    "steam_login.py": "622112f31609518d5ae18feb7e7aef89feef85daa6724d9f7d4f72af42a210aa",
+    "steam_friends.py": "8e87c60ece8b1eec529fd6b9b456d8265852cd089670c65da8f348e7be9f2e5f",
+    "parties_http.py": "ac25a4f5fa30ca5b78f4f08b740af8314f3044e48eac9c2afbc078474fc1c581"
+  },
+  "backup_bytes": 479232
+}

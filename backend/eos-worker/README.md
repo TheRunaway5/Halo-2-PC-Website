@@ -340,3 +340,21 @@ career accuracy and report coverage by player. SQLite previously scanned every
 player's weapon rows; the actual image now uses player-scoped index searches for
 both queries. All 26 scoped tests passed. The same patch contains the two index
 additions; no carnage rows or rank rules change.
+
+The scoped image `halo2-master-eos:20261023T031806Z-social` adds remembered
+Steam sign-in and Steam/clan party invitation endpoints. The native Rust bridge
+stores each profile's refresh credential in the OS credential store. The master
+retains only credential hashes, issues eight-hour sessions, expires refresh
+credentials after thirty days, and revokes their issued sessions on Sign Out.
+Steam OpenID does not grant private friend-list access: the server uses its
+existing Steam API key, reports privacy failures explicitly, caches lookups for
+sixty seconds, and filters online friends by immutable identity. Individual clan
+invites recheck current clan membership and online presence. Existing party
+leadership, capacity, blocks, consent and match rules still apply.
+
+Eighteen applicable HTTP regressions and the actual image's schema/routes,
+health and deployed source hashes passed. The separate party roster appearance
+extension is excluded from this production overlay. The client rebuild and
+two-account join check remain pending. See
+[the source overlay](steam-social-and-remembered-login.patch) and
+[the rollout receipt](steam-social-rollout.json).

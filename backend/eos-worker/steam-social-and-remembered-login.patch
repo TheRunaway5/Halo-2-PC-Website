@@ -1,0 +1,283 @@
+--- a/multiplayer/master_server/service.py
++++ b/multiplayer/master_server/service.py
+@@ -171,8 +171,11 @@
+         self.party_voice = PartyVoice(self.clans, self.parties)
+         from .steam_login import SteamLogin
+         self.steam = SteamLogin(self)
++        from .steam_friends import SteamFriends
++        self.steam_friends = SteamFriends(self)
+ 
+     async def verify_identity(self, token):
++        require(not token.startswith("h2r_"), "Saved sign-in is only valid for session renewal", 401)
+         if token.startswith("h2s_"):
+             require(self.settings.steam_enabled, "Steam sign-in is not configured", 503)
+             return await self.steam.owner(token)
+@@ -425,6 +428,7 @@
+     ])
+     app.add_routes(directory.matchmaking.routes())
+     app.add_routes(directory.steam.routes())
++    app.add_routes(directory.steam_friends.routes())
+     app.add_routes(directory.history.routes())
+     from .search_qos import SearchQos
+     directory.search_qos = SearchQos(directory.matchmaking)
+--- a/multiplayer/master_server/steam_login.py
++++ b/multiplayer/master_server/steam_login.py
+@@ -20,6 +20,8 @@
+ OP = "https://steamcommunity.com/openid/login"
+ NS = "http://specs.openid.net/auth/2.0"
+ SELECT = NS + "/identifier_select"
++MAX_SUBJECT_SESSIONS = 4
++REFRESH_LIFETIME = 30 * 86400
+ 
+ 
+ @dataclass
+@@ -41,6 +43,11 @@
+           expires INTEGER NOT NULL);
+         CREATE TABLE IF NOT EXISTS steam_login_nonces(
+           nonce TEXT PRIMARY KEY, expires INTEGER NOT NULL);
++        CREATE TABLE IF NOT EXISTS steam_login_refresh(
++          token_hash TEXT PRIMARY KEY, subject TEXT NOT NULL, name TEXT NOT NULL,
++          expires INTEGER NOT NULL);
++        CREATE TABLE IF NOT EXISTS steam_login_refresh_sessions(
++          session_hash TEXT PRIMARY KEY, refresh_hash TEXT NOT NULL);
+         """)
+ 
+     def cleanup(self):
+@@ -49,6 +56,8 @@
+         with self.db:
+             self.db.execute("DELETE FROM steam_login_sessions WHERE expires<=?", (now,))
+             self.db.execute("DELETE FROM steam_login_nonces WHERE expires<=?", (now,))
++            self.db.execute("DELETE FROM steam_login_refresh WHERE expires<=?", (now,))
++            self.db.execute("DELETE FROM steam_login_refresh_sessions WHERE session_hash NOT IN (SELECT token_hash FROM steam_login_sessions)")
+ 
+     def enabled(self):
+         require(self.directory.settings.steam_enabled, "Steam sign-in is not configured", 503)
+@@ -189,15 +198,67 @@
+             return web.json_response({"state": pending.status}, headers=headers)
+         owner = pending.identity
+         self.cleanup()
+-        require(self.db.execute("SELECT count(*) FROM steam_login_sessions").fetchone()[0] < 1000,
+-                "Steam identity capacity reached", 503)
+         token = "h2s_" + secrets.token_urlsafe(32)
+-        with self.db:
++        refresh = "h2r_" + secrets.token_urlsafe(32)
++        with self.db:
++            # The first DELETE acquires the write transaction before counting
++            # capacity. Retain the newest sessions and rotate this subject's
++            # oldest tokens without evicting any other account's sessions.
++            self.db.execute("""DELETE FROM steam_login_sessions WHERE subject=? AND token_hash NOT IN
++                (SELECT token_hash FROM steam_login_sessions WHERE subject=?
++                 ORDER BY expires DESC,rowid DESC LIMIT ?)""", (owner.subject, owner.subject, MAX_SUBJECT_SESSIONS - 1))
++            require(self.db.execute("SELECT count(*) FROM steam_login_sessions").fetchone()[0] < 1000,
++                    "Steam identity capacity reached", 503)
+             self.db.execute("INSERT INTO steam_login_sessions VALUES(?,?,?,?)",
+                             (hashlib.sha256(token.encode()).hexdigest(), owner.subject, owner.username, int(self.clock()) + 28800))
++            self.db.execute("DELETE FROM steam_login_refresh WHERE subject=? AND token_hash NOT IN "
++                            "(SELECT token_hash FROM steam_login_refresh WHERE subject=? ORDER BY expires DESC,rowid DESC LIMIT ?)",
++                            (owner.subject,owner.subject,MAX_SUBJECT_SESSIONS-1))
++            require(self.db.execute("SELECT count(*) FROM steam_login_refresh").fetchone()[0] < 1000,
++                    "Remembered sign-in capacity reached", 503)
++            self.db.execute("INSERT INTO steam_login_refresh VALUES(?,?,?,?)",
++                            (hashlib.sha256(refresh.encode()).hexdigest(),owner.subject,owner.username,int(self.clock())+REFRESH_LIFETIME))
++            self.db.execute("INSERT INTO steam_login_refresh_sessions VALUES(?,?)",
++                            (hashlib.sha256(token.encode()).hexdigest(),hashlib.sha256(refresh.encode()).hexdigest()))
+         del self.pending[state]
+-        return web.json_response({"state": "signed_in", "token": token, "expires_in": 28800,
++        return web.json_response({"state": "signed_in", "token": token, "refresh_token": refresh, "expires_in": 28800,
+                                   "identity": {"id": owner.subject, "username": owner.username, "display_name": owner.username}}, headers=headers)
++
++    def refresh_credential(self, request):
++        token = request.headers.get("Authorization", "")
++        require(re.fullmatch(r"Bearer h2r_[A-Za-z0-9_-]{43}", token), "Saved Steam sign-in rejected", 401)
++        return hashlib.sha256(token[7:].encode()).hexdigest()
++
++    async def resume(self, request):
++        self.enabled()
++        self.directory.rate("steam-resume:"+self.directory.source(request), 30)
++        fields(await self.directory.body(request), ())
++        digest = self.refresh_credential(request)
++        self.cleanup()
++        row = self.db.execute("SELECT subject,name,expires FROM steam_login_refresh WHERE token_hash=?", (digest,)).fetchone()
++        require(row and row[2]>self.clock(), "Saved Steam sign-in expired", 401)
++        token = "h2s_"+secrets.token_urlsafe(32)
++        with self.db:
++            self.db.execute("DELETE FROM steam_login_sessions WHERE subject=? AND token_hash NOT IN "
++                            "(SELECT token_hash FROM steam_login_sessions WHERE subject=? ORDER BY expires DESC,rowid DESC LIMIT ?)",
++                            (row[0],row[0],MAX_SUBJECT_SESSIONS-1))
++            require(self.db.execute("SELECT count(*) FROM steam_login_sessions").fetchone()[0]<1000,
++                    "Steam identity capacity reached",503)
++            self.db.execute("INSERT INTO steam_login_sessions VALUES(?,?,?,?)",
++                            (hashlib.sha256(token.encode()).hexdigest(),row[0],row[1],int(self.clock())+28800))
++            self.db.execute("INSERT INTO steam_login_refresh_sessions VALUES(?,?)",(hashlib.sha256(token.encode()).hexdigest(),digest))
++        return web.json_response({"state":"signed_in","token":token,"expires_in":28800,
++            "identity":{"id":row[0],"username":row[1],"display_name":row[1]}},headers={"Cache-Control":"no-store"})
++
++    async def forget(self, request):
++        self.directory.rate("steam-forget:"+self.directory.source(request),30)
++        fields(await self.directory.body(request), ())
++        digest = self.refresh_credential(request)
++        with self.db:
++            self.db.execute("DELETE FROM steam_login_refresh WHERE token_hash=?",(digest,))
++            self.db.execute("DELETE FROM steam_login_sessions WHERE token_hash IN (SELECT session_hash FROM steam_login_refresh_sessions WHERE refresh_hash=?)",(digest,))
++            self.db.execute("DELETE FROM steam_login_refresh_sessions WHERE refresh_hash=?",(digest,))
++        return web.json_response({"state":"signed_out"},headers={"Cache-Control":"no-store"})
+ 
+     async def owner(self, token):
+         require(bool(re.fullmatch(r"h2s_[A-Za-z0-9_-]{43}", token)), "Steam identity rejected", 401)
+@@ -240,6 +301,9 @@
+             # Check every declared persistent reference, including stats/ranks.
+             # Do not delete or silently combine two independently played users.
+             for (table,) in self.db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
++                # A public alias is allocated at first login, before any play.
++                # Actual history, customization and EOS bindings still block
++                # adoption through their own player foreign keys below.
+                 if table in ("player_profiles", "player_identities", "history_players"):
+                     continue
+                 quoted = '"' + table.replace('"', '""') + '"'
+@@ -280,4 +344,6 @@
+                 web.get("/v1/auth/steam/complete", self.complete_page),
+                 web.get("/v1/auth/steam/callback/{state}", self.callback),
+                 web.post("/v1/auth/steam/poll", self.poll),
++                web.post("/v1/auth/steam/resume", self.resume),
++                web.post("/v1/auth/steam/forget", self.forget),
+                 web.post("/v1/account/link-discord", self.link_discord)]
+--- /dev/null
++++ b/multiplayer/master_server/steam_friends.py
+@@ -0,0 +1,85 @@
++"""Private, bounded Steam friends lookup for the currently authenticated account."""
++import asyncio
++import re
++import time
++from aiohttp import web
++from .protocol import require
++
++
++class SteamFriends:
++    def __init__(self, directory):
++        self.directory = directory
++        self.cache = {}
++        self.lock = asyncio.Lock()
++
++    def subject(self, player):
++        row = self.directory.store.db.execute(
++            "SELECT subject FROM player_identities WHERE player=? AND provider='steam'", (player,)).fetchone()
++        require(row, "Sign in with Steam to view Steam friends", 403)
++        return row[0]
++
++    async def lookup(self, player):
++        from .service import bounded_json
++        subject = self.subject(player)
++        key = self.directory.settings.steam_key
++        require(key, "Steam friends are unavailable", 503)
++        async with self.lock:
++            now = time.monotonic()
++            self.cache = {k:v for k,v in self.cache.items() if v[0]>now}
++            if subject in self.cache:
++                return self.cache[subject][1]
++            require(len(self.cache)<1000, "Steam friends are busy; try again", 503)
++            async with self.directory.session.get(
++                "https://api.steampowered.com/ISteamUser/GetFriendList/v1/",
++                params={"key":key,"steamid":subject,"relationship":"friend"},allow_redirects=False) as response:
++                if response.status in (401,403):
++                    result = {"state":"private","friends":[]}
++                    self.cache[subject]=(now+60,result)
++                    return result
++                require(response.status==200, "Steam friends are temporarily unavailable",502)
++                body = await bounded_json(response)
++            rows = body.get("friendslist",{}).get("friends",[])
++            require(type(rows) is list and len(rows)<=10000, "Invalid Steam friends response",502)
++            subjects = {r.get("steamid", "") for r in rows if type(r) is dict and r.get("relationship")=="friend"}
++            require(all(type(s) is str and re.fullmatch(r"[1-9][0-9]{16}",s) for s in subjects),"Invalid Steam friends response",502)
++            # Web API summaries are limited to 100 identities per call. A
++            # bounded first page avoids an unbounded upstream fanout.
++            selected = sorted(subjects)[:1000]
++            summaries = []
++            for offset in range(0,len(selected),100):
++                async with self.directory.session.get(
++                    "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
++                    params={"key":key,"steamids":",".join(selected[offset:offset+100])},allow_redirects=False) as response:
++                    require(response.status==200,"Steam friends are temporarily unavailable",502)
++                    body=await bounded_json(response)
++                batch=body.get("response",{}).get("players",[])
++                require(type(batch) is list and len(batch)<=100,"Invalid Steam profiles response",502)
++                summaries.extend(batch)
++            friends=[]; seen=set()
++            for row in summaries:
++                if type(row) is not dict: continue
++                sid=row.get("steamid"); name=row.get("personaname"); online=row.get("personastate")
++                if sid not in subjects or sid in seen: continue
++                seen.add(sid)
++                if type(name) is not str or not name or len(name.encode())>128 or any(ord(c)<32 or ord(c)==127 for c in name): continue
++                if type(online) is not int or not 1<=online<=6: continue
++                friends.append({"id":sid,"name":name})
++            result={"state":"ready","friends":friends,"truncated":len(subjects)>len(selected)}
++            self.cache[subject]=(now+60,result)
++            return result
++
++    async def get(self, request):
++        self.directory.rate("steam-friends:"+self.directory.source(request),30)
++        _,who=self.directory.clans.session(request)
++        result=await self.lookup(who)
++        from .player_presence import observed
++        present=observed(self.directory); db=self.directory.store.db
++        friends=[]
++        for row in result["friends"]:
++            target=db.execute("SELECT player FROM player_identities WHERE provider='steam' AND subject=?",(row["id"],)).fetchone()
++            if target and db.execute("SELECT 1 FROM party_blocks WHERE (player=? AND inviter=?) OR (player=? AND inviter=?)",(target[0],who,who,target[0])).fetchone(): continue
++            friends.append({**row,"registered":bool(target),"halo_online":bool(target and target[0] in present)})
++        return web.json_response({**result,"friends":sorted(friends,key=lambda r:(not r["halo_online"],r["name"].casefold(),r["id"]))},headers={"Cache-Control":"no-store"})
++
++    def routes(self):
++        return [web.get("/v1/account/steam-friends",self.get)]
+--- a/multiplayer/master_server/parties_http.py
++++ b/multiplayer/master_server/parties_http.py
+@@ -203,9 +203,9 @@
+ 
+     async def command(self, request):
+         body = await self.directory.body(request)
+-        fields(body, ("action", "request_id"), ("version", "username", "discord_id", "target", "playlist_id", "revision", "join_secret"))
++        fields(body, ("action", "request_id"), ("version", "username", "discord_id", "steam_id", "target", "playlist_id", "revision", "join_secret"))
+         action, rid = text(body["action"]), identifier(body["request_id"])
+-        options = {"create": (), "invite": ("version","username"), "invite_discord": ("version","discord_id"), "invite_clan": ("version",),
++        options = {"create": (), "invite": ("version","username"), "invite_discord": ("version","discord_id"), "invite_steam": ("version","steam_id"), "invite_member": ("version","target"), "invite_clan": ("version",),
+                    "accept": ("version","target"), "decline": ("target",), "block": ("target",),
+                    "cancel": ("version","target"), "leave": ("version",),
+                    "remove": ("version","target"), "transfer": ("version","target"),
+@@ -215,6 +215,18 @@
+         self.cleanup()
+         _, who = self.directory.clans.session(request)
+         payload = canonical(body).decode()
++        previous=self.db.execute("SELECT payload FROM party_requests WHERE player=? AND request=?",(who,rid)).fetchone()
++        if previous:
++            require(previous[0]==payload,"Party request ID already used differently",409)
++            return web.json_response(self.view(who))
++        if action=="invite_steam":
++            subject=text(body["steam_id"],17)
++            require(re.fullmatch(r"[1-9][0-9]{16}",subject),"Invalid Steam invitation target")
++            friends=await self.directory.steam_friends.lookup(who)
++            require(friends["state"]=="ready" and any(row["id"]==subject for row in friends["friends"]),
++                    "Refresh Steam friends before inviting this player",403)
++            # The upstream await cannot retain an expired account capability.
++            _,who=self.directory.clans.session(request)
+         db = self.db
+         with db:
+             old = db.execute("SELECT payload FROM party_requests WHERE player=? AND request=?", (who,rid)).fetchone()
+@@ -275,6 +287,18 @@
+                                         "SELECT player FROM player_identities WHERE provider='discord' AND subject=? LIMIT 1", (subject,subject)).fetchone()
+                     require(target is not None, "Player must sign into ONLINE first", 404)
+                     self.invite(pid,who,target[0])
++                elif action == "invite_steam":
++                    target=db.execute("SELECT player FROM player_identities WHERE provider='steam' AND subject=?",(subject,)).fetchone()
++                    require(target is not None,"Player must sign into ONLINE first",404)
++                    require(not db.execute("SELECT 1 FROM party_blocks WHERE player=? AND inviter=?",(who,target[0])).fetchone(),"Player is blocked",403)
++                    self.invite(pid,who,target[0])
++                elif action == "invite_member":
++                    target=identifier(body["target"])
++                    clan=self.directory.clans.member(who)
++                    require(clan is not None and db.execute("SELECT 1 FROM clan_members WHERE clan=? AND player=?",(clan[0],target)).fetchone(),
++                            "Player is no longer in your clan",403)
++                    require(self.online(target),"Clan member is offline",409)
++                    self.invite(pid,who,target)
+                 elif action == "invite_clan":
+                     clan = self.directory.clans.member(who)
+                     require(clan is not None and clan[1] >= 1, "Clan recruiting permission required", 403)
