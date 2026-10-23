@@ -28,7 +28,7 @@
       "identity_authorization": "fixture"
     },
     "relocated_rust_bootstrap": true,
-    "launcher_promotion_policy_tests": 12,
+    "launcher_promotion_policy_tests": 16,
     "actual_production_catalog_playlists": 9,
     "wan_relay": {
       "passed": true,
@@ -70,43 +70,49 @@
       "max_players": 1024,
       "ttl_seconds": 300,
       "player_scoped_accuracy_and_coverage_indexes": true
+    },
+    "real_account_profile": {
+      "steam_login_binding": true,
+      "published_revision_matches_master": true,
+      "expected_fields_read_back": 27,
+      "public_profile_statistics_source": "eos",
+      "public_customization_present": true,
+      "cached_leaderboards": 9,
+      "legacy_unknown_join_dates_preserved": true,
+      "receipt": "analysis/eos-real-account-20261022/report.json"
     }
   },
   "pending": [
-    "Delivered client runtime qualification",
-    "Real player account linkage and completed match publication",
+    "Completed real match publication",
     "Two consumer networks and microphone playback",
     "Complete-world host migration",
     "Legacy transport removal"
   ],
   "transport_fix": "Rust retains up to 32 early SDK requests for 30 seconds and accepts only after an authenticated roster binding.",
   "client_delivery": {
-    "installed": false,
+    "installed": true,
     "source_compile_and_launcher_checks_passed": true,
-    "frame_cases_passed": 8,
+    "native_wiring_passed": true,
+    "frame_cases_passed": 12,
     "frame_cases_total": 12,
-    "failures": {
-      "ascension": "startup timeout",
-      "beavercreek": "startup timeout",
-      "dune": "zero submitted frames"
-    },
-    "diagnostic_interruption": "coagulation with one local player; two/four-player Coagulation passed",
-    "prior_runtime_also_fails_ascension": true,
-    "selected_runtime_preserved": true,
+    "official_sdk_verified": true,
+    "configuration_mode": "0600",
+    "eos_transport_enabled": true,
+    "eos_profiles_enabled": true,
+    "runtime": "bin/engine-builds/4a9dcc67f41a4169bcd6ac1ab1a5a088/halo2_native",
+    "configuration_receipt": "analysis/single-play-cleanup-20261022.json",
     "scratch_and_unqualified_candidate_removed": true,
     "large_test_artifacts_retained": false,
-    "isolated_display_reference": {
-      "runtime": "previously selected client without EOS",
-      "gpu": "NVIDIA GeForce RTX 5080",
-      "frame_count": 4,
-      "timeout_seconds": 180,
-      "ascension_passed": true,
-      "ascension_seconds": 117.228,
-      "dune_passed": true,
-      "dune_seconds": 69.43,
-      "root_cause_confirmed": false,
-      "scratch_removed": true
-    },
-    "isolated_eos_candidate_qualification": "running"
+    "launcher_actions": [
+      "Play"
+    ],
+    "normal_startup": "intro-title-menu",
+    "normal_startup_verified": true,
+    "runtime_sha256": "e01ac6cf9ec007ffff0078bfea736d0f4a2f9bb33ce454d577cd23286f3fde68",
+    "build_receipt": "analysis/single-play-engine-20261022/report.json",
+    "frontend_receipt": "analysis/single-play-menu-20261022/report.json",
+    "installed_startup_receipt": "analysis/single-play-installed-20261022/report.json",
+    "real_account_profile_verified": true,
+    "future_builds_select_qualified_frontend": true
   }
 }

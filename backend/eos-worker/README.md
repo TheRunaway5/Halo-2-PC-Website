@@ -8,8 +8,16 @@ Sessions and P2P; only the thin official C ABI adapter is C++.
 
 ## Current status
 
-Local implementation builds and focused tests pass. The native ONLINE UI build
-succeeds, but its full UI regression stops at a missing selected imported bitmap
+The installed native client builds and passes all twelve MCC frame cases. Both
+launcher names now open a single Play control and launch the supplied intro,
+title screen and menus. Installed startup and actual keyboard navigation through
+the local profile picker to ONLINE passed. The first real Steam account linked
+to EOS; the trusted publisher read back all 27 expected profile/stat fields and
+the public website profile API reports `statistics_source: "eos"` with its
+customization. Completed-match publication, two-consumer-network gameplay,
+microphone playback and complete-world host migration remain unverified.
+
+An earlier full UI regression stopped at a missing selected imported bitmap
 before service-tag assertions. Localhost browser checks cover the service tag,
 Elite species, join date, K/D, shot accuracy and playlist selection using an
 explicit fictional fixture. A separate localhost check runs three authenticated
@@ -40,8 +48,9 @@ The master now also accepts the EOS v13 session/peer handoff in production.
 Its three-file overlay passed 23 scoped Python checks and actual native SDK
 qualification against the exact deployed source, including forced relay, eight
 seats and signed synthetic voice packets. See [the transport release receipt](config/transport-release.json).
-Real player login/profile binding from a delivered native client and two-machine
-playable relay gameplay remain acceptance work. The game client retains its Sessions-only
+Real player login/profile binding and publication from the installed native
+client have passed; completed-match publication and two-machine playable relay
+gameplay remain acceptance work. The game client retains its Sessions-only
 policy. Additive profile/EOS schema changes are deployed; legacy join dates stay
 unknown.
 
@@ -244,9 +253,9 @@ private named builder, builds both images, checks SDK dynamic dependencies and
 HTTP behavior without network access, then removes its images, builder and
 extracted SDK. It does not update running production services.
 
-Server ingest/read-back, repeated absolute publication, clearing customization
-and lowering a displayed rank have passed live qualification. Before cutover,
-verify a real player's login/profile binding, delayed publication, populated playlist
+Server ingest/read-back, repeated absolute publication, clearing customization,
+lowering a displayed rank and real-player login/profile publication have passed
+live qualification. Before completing cutover, verify completed-match publication, populated playlist
 isolation, tied ranks, offline recovery and two-machine relay gameplay. Back up the master
 DB/signing key and retain a rollback image. Existing device-only EOS accounts
 need an explicit recovery/migration plan before anyone relies on them.
@@ -255,9 +264,9 @@ Removed locally: `scripts/leaderboard-store.ts`, its old SQL-sort tests, obsolet
 sort/pagination types/UI and the `/v1/history/leaderboard` route. The API regression
 asserts that old path is gone. The one-off website master source patch and its
 queue-only tests are superseded by the canonical master population API. Full carnage SQL and Halo rank math are retained
-because they are still required. The legacy direct-peer transport is still the
-currently deployed default and can be removed only after EOS transport cutover
-and runtime verification; deleting it now would break existing clients.
+because they are still required. The legacy direct-peer transport remains available for existing v12 clients
+until gameplay cutover acceptance; deleting it would break
+those clients.
 
 ## Cross-host transport qualification
 
@@ -284,20 +293,35 @@ bounded to 32, expire after 30 seconds, and grant no access until their PUID is
 bound to an admitted physical slot. The game runtime qualification includes
 that fix. Add `--allow-direct` to the command above to test normal routing.
 
-The client also implements separate profile synchronization for authenticated
-couch players, excluding guests and duplicate local sign-ins. Its primary sync
-is pinned to the signed-in host profile. Account regression and UI translation-unit
-syntax checks passed. The complete client and launcher builds passed, but runtime
-promotion was withheld: eight of twelve map/frame cases passed; Ascension and
-Beaver Creek timed out, Dune submitted zero frames, and one-player Coagulation
-was interrupted for diagnosis (its two/four-player cases passed). The previously
-selected client, without EOS linked, also failed Ascension on the desktop.
-That same client subsequently passed Ascension (117 seconds) and Dune (69 seconds)
-on an isolated Xvfb display using the NVIDIA GPU and the same four-frame CLI and
-180-second budget. This narrows the diagnostic; it does not establish a root
-cause or qualify the EOS candidate. A fresh EOS build is running the full matrix
-on an isolated display. The previous launcher selection is preserved; the first
-failed candidate and all of its owned build artifacts were removed.
+The client implements separate profile synchronization for authenticated couch
+players, excluding guests and duplicate local sign-ins. Its primary sync is
+pinned to the signed-in host profile. Account regression and UI translation-unit
+syntax checks passed. The complete EOS client and launcher builds, native wiring
+audit and all twelve MCC frame cases subsequently passed on an isolated NVIDIA
+display. EOS was enabled in the already selected runtime after verifying its
+source cohort exactly matched that build; all twelve checks passed again with
+the packaged configuration. The earlier desktop failures remain an unresolved
+diagnostic, rather than a confirmed EOS defect. Original runtime resources and
+weapon-audio qualification were preserved.
+
+The launcher home now has a single Play control. Both installed shortcut names
+launch the supplied intro, title screen and main menu; multiplayer, content
+previews and native tests remain explicit diagnostic commands. The replacement
+runtime `bin/engine-builds/4a9dcc67f41a4169bcd6ac1ab1a5a088/halo2_native`
+passed all twelve MCC frame cases, installed launcher checks and natural intro
+playback followed by actual menu navigation to ONLINE. Seven launcher/movie
+regression groups and sixteen build-promotion policy tests passed. Future engine
+builds qualify and select their matching frontend before activation.
+
+The user's Steam login in that installed build produced a master/EOS account
+binding and a profile revision whose 27 expected fields matched SDK read-back.
+The public website profile API also serves its EOS-backed statistics and
+customization. The legacy account had no join date before this login, so its
+date remains unknown; new registrations record their actual creation time.
+Identity values are omitted from the release receipt. These checks do not
+establish completed-match publication, two-consumer-network gameplay, microphone
+playback or complete-world host migration. Disposable builds and captures were
+removed; the selected runtime and existing user assets are retained.
 
 The follow-up production image `halo2-master-eos:20261022T235241Z-profile-cache`
 also removes repeated lifetime-history scans from native profile heartbeats and
