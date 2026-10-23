@@ -1,0 +1,264 @@
+--- a/multiplayer/master_server/couch_players.py
++++ b/multiplayer/master_server/couch_players.py
+@@ -8,17 +8,18 @@
+ NATIVE_CONTINUITY = "halo2-native-queue-v11"
+ NATIVE_DIRECT = "halo2-native-queue-v12"
+ NATIVE_EOS = "halo2-native-queue-v13"
+-NATIVE_COUCH = ("halo2-native-queue-v9", "halo2-native-queue-v10", NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS)
++NATIVE_EOS_ACCOUNT = "halo2-native-queue-v14"
++NATIVE_COUCH = ("halo2-native-queue-v9", "halo2-native-queue-v10", NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT)
+ NATIVE_GATHERING = ("halo2-native-queue-v8", *NATIVE_COUCH)
+ 
+ 
+ def supports_compatibility(actual, required):
+-    return actual == required or (required == "halo2-native-queue-v10" and actual in (NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS))
++    return actual == required or (required == "halo2-native-queue-v10" and actual in (NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT))
+ 
+ 
+ def same_continuity_protocol(connections):
+     versions = [member.compatibility for member in connections if member]
+-    for exclusive in (NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS):
++    for exclusive in (NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT):
+         if exclusive in versions:
+             return all(version == exclusive for version in versions)
+     return True
+--- a/multiplayer/master_server/eos_identity.py
++++ b/multiplayer/master_server/eos_identity.py
+@@ -13,7 +13,7 @@
+ from aiohttp import web
+ from cryptography.hazmat.primitives import hashes, serialization
+ from cryptography.hazmat.primitives.asymmetric import rsa, padding
+-from .protocol import fields, require
++from .protocol import fields, require, parse
+ from .player_statistics import enqueue
+ 
+ 
+@@ -74,25 +74,38 @@
+         require(self.pending<32,'EOS verification busy',429)
+         self.pending+=1
+         try:
+-            async with self.lock:
+-                try:
+-                    if self.process is None or self.process.returncode is not None:
+-                        self.process=await asyncio.create_subprocess_exec(self.binary,stdin=asyncio.subprocess.PIPE,
+-                            stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.DEVNULL,limit=262144)
+-                    async with asyncio.timeout(20):
+-                        self.process.stdin.write(json.dumps(dict(op='verify',user=puid,token=token)).encode()+b'\n')
+-                        await self.process.stdin.drain()
+-                        for _ in range(64):
+-                            line=await self.process.stdout.readline()
+-                            if not line:raise ValueError('Worker exited')
+-                            if not line.startswith(b'H2EOS '):continue
+-                            reply=json.loads(line[6:])
+-                            require(reply.get('ok') is True,'EOS identity proof rejected',403)
+-                            return reply['value']['account']
+-                        raise ValueError('No worker reply')
+-                except (OSError,TimeoutError,ValueError,KeyError):
+-                    await self.close(None)
+-                    require(False,'EOS verification unavailable',503)
++            try:
++                # Queue admission is bounded independently of the owned worker
++                # operation. A waiter must never close another caller's stream.
++                async with asyncio.timeout(2) as admission:
++                    async with self.lock:
++                        admission.reschedule(None)
++                        try:
++                            async with asyncio.timeout(20):
++                                if self.process is None or self.process.returncode is not None:
++                                    self.process=await asyncio.create_subprocess_exec(self.binary,stdin=asyncio.subprocess.PIPE,
++                                        stdout=asyncio.subprocess.PIPE,stderr=asyncio.subprocess.DEVNULL,limit=262144)
++                                self.process.stdin.write(json.dumps(dict(op='verify',user=puid,token=token)).encode()+b'\n')
++                                await self.process.stdin.drain()
++                                for _ in range(64):
++                                    line=await self.process.stdout.readline()
++                                    if not line:raise ValueError('Worker exited')
++                                    if not line.startswith(b'H2EOS '):continue
++                                    reply=json.loads(line[6:])
++                                    require(reply.get('ok') is True,'EOS identity proof rejected',403)
++                                    return reply['value']['account']
++                                raise ValueError('No worker reply')
++                        except asyncio.CancelledError:
++                            # Once this caller owns the stream, cancellation may
++                            # leave an unmatched reply. Detach and retire it while
++                            # the lock is still held before admitting another user.
++                            await self.close(None)
++                            raise
++                        except (OSError,TimeoutError,ValueError,KeyError):
++                            await self.close(None)
++                            require(False,'EOS verification unavailable',503)
++            except TimeoutError:
++                require(False,'EOS verification busy; retry',503)
+         finally:self.pending-=1
+ 
+     async def bind(self,request):
+@@ -107,16 +120,39 @@
+         # this exact account session remains active.
+         _,current=self.directory.clans.session(request)
+         require(current==who,'Account session changed',401)
++        self.bind_player(who,body['puid'])
++        return web.json_response({'linked':True})
++
++    @staticmethod
++    def proof_subject(token):
++        # This is only a bounded routing hint for the official SDK verifier.
++        # Neither this decoded subject nor any other unverified JWT claim
++        # authorizes a player or establishes an EOS binding.
++        require(type(token) is str and 1<=len(token)<=8192 and
++                all(32<ord(c)<127 for c in token),'Invalid EOS identity proof')
++        parts=token.split('.')
++        require(len(parts)==3 and all(parts),'Invalid EOS identity proof')
++        try:
++            payload=base64.b64decode(parts[1]+'='*(-len(parts[1])%4),altchars=b'-_',validate=True)
++        except (ValueError,UnicodeError):
++            require(False,'Invalid EOS identity proof')
++        claims=parse(payload)
++        require(type(claims) is dict and type(claims.get('sub')) is str and
++                re.fullmatch(r'[0-9a-f]{32}',claims['sub']),'Invalid EOS identity proof')
++        return claims['sub']
++
++    def bind_player(self,who,puid):
++        # Callers must have checked the SDK-verified account and revalidated
++        # their still-current capability after the asynchronous verification.
+         db=self.directory.store.db
+         with db:
+             old=db.execute('SELECT puid FROM eos_players WHERE player=?',(who,)).fetchone()
+-            require(old is None or old[0]==body['puid'],'EOS identity migration requires explicit recovery',409)
+-            linked=db.execute('SELECT player FROM eos_players WHERE puid=?',(body['puid'],)).fetchone()
++            require(old is None or old[0]==puid,'EOS identity migration requires explicit recovery',409)
++            linked=db.execute('SELECT player FROM eos_players WHERE puid=?',(puid,)).fetchone()
+             require(linked is None or linked[0]==who,'EOS identity already linked',409)
+             if old is None:
+-                db.execute('INSERT INTO eos_players VALUES(?,?)',(who,body['puid']))
++                db.execute('INSERT INTO eos_players VALUES(?,?)',(who,puid))
+                 enqueue(db,who)
+-        return web.json_response({'linked':True})
+ 
+     async def close(self,_):
+         process,self.process=self.process,None
+--- a/multiplayer/master_server/match_transport.py
++++ b/multiplayer/master_server/match_transport.py
+@@ -12,8 +12,8 @@
+ import sqlite3
+ import time
+ from aiohttp import web, WSMsgType
+-from .protocol import require, Problem
+-from .couch_players import NATIVE_COUCH, NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS
++from .protocol import require, Problem, fields
++from .couch_players import NATIVE_COUCH, NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT
+ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+ from .match_continuity import PlayerHostedContinuity
+ 
+@@ -28,9 +28,11 @@
+         self.compatibility = api.core.tickets[proposal.tickets[0]].compatibility
+         self.couch_protocol = self.compatibility in NATIVE_COUCH
+         self.supports_continuity = self.compatibility == NATIVE_CONTINUITY
+-        self.eos = self.compatibility == NATIVE_EOS
+-        self.direct_udp = self.compatibility in (NATIVE_DIRECT, NATIVE_EOS)
++        self.eos_account = self.compatibility == NATIVE_EOS_ACCOUNT
++        self.eos = self.compatibility in (NATIVE_EOS, NATIVE_EOS_ACCOUNT)
++        self.direct_udp = self.compatibility in (NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT)
+         self.eos_socket, self.eos_users = secrets.token_hex(16), {}
++        self.eos_verified = {}
+         physical = sorted(set(self.owners.values()))
+         self.eos_keys = {(a, b): secrets.token_hex(32) for i, a in enumerate(physical) for b in physical[i+1:]} if self.eos else {}
+         self.direct_ready, self.pending_signals, self.signaled_descriptions = {}, {}, set()
+@@ -61,7 +63,7 @@
+         self.result, self.result_digest, self.confirmations = b"", "", set()
+         self.peers, self.samples, self.loaded = {}, {}, {}
+         self.phase, self.host = "connecting", None
+-        self.created, self.deadline = time.monotonic(), time.monotonic() + (60 if self.eos else 25)
++        self.created, self.deadline = time.monotonic(), time.monotonic() + (120 if self.eos_account else 60 if self.eos else 25)
+         self.created_wall = api.directory.store.now()
+         self.closed = False
+ 
+@@ -69,7 +71,7 @@
+         result = {"id": self.id, "token": self.tokens[player], "slot": self.index(player),
+                 "players": [{"name": name, "team": team, "identity": self.identities[p]}
+                             for p, name, team in self.players]}
+-        if self.compatibility in ("halo2-native-queue-v10", NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS):
++        if self.compatibility in ("halo2-native-queue-v10", NATIVE_CONTINUITY, NATIVE_DIRECT, NATIVE_EOS, NATIVE_EOS_ACCOUNT):
+             result["team_mode"] = self.team_mode
+         if self.direct_udp:
+             result["transport"] = {"kind": "direct-udp-v1", "stun_servers": list(self.api.directory.settings.peer_stun_urls)}
+@@ -135,6 +137,7 @@
+ 
+     def retire_capability(self, player):
+         self.tokens.pop(player, None)
++        self.eos_verified.pop(player, None)
+         self.confirmations.discard(player)
+         self.departed_slots |= sum(1 << i for i, (p, _, _) in enumerate(self.players)
+                                    if self.owners[p] == player)
+@@ -381,6 +384,45 @@
+             self.rooms[ident] = Room(self.api, self.api.core.proposals[ident])
+         room = self.rooms[ident]
+         return web.json_response(room.descriptor(session.player))
++
++    def eos_owner(self, request, previous=None):
++        room = self.rooms.get(request.match_info["room"])
++        require(room is not None and not room.closed and time.monotonic() <= room.deadline and
++                (previous is None or room is previous[0]), "Match no longer exists", 404)
++        require(room.eos_account, "Match does not use account-authenticated EOS transport", 409)
++        bearer = request.headers.get("Authorization", "")
++        require(bearer.startswith("Bearer ") and len(bearer) < 128, "Match authorization required", 401)
++        player = next((p for p, token in room.tokens.items() if secrets.compare_digest(token, bearer[7:])), None)
++        require(player is not None and player not in room.guests and room.owners.get(player) == player and
++                (previous is None or player == previous[1]), "Match authorization required", 401)
++        return room, player
++
++    async def eos_token(self, request):
++        owner = self.eos_owner(request)
++        body = await self.api.directory.body(request)
++        fields(body, ())
++        room, player = self.eos_owner(request, owner)
++        self.api.directory.rate("eos-room:" + player, 120)
++        name = next(name for p, name, _ in room.players if p == player)
++        token = self.api.directory.eos_identity.token(player, name)
++        return web.json_response(dict(token=token, expires_in=120))
++
++    async def eos_proof(self, request):
++        owner = self.eos_owner(request)
++        body = await self.api.directory.body(request)
++        fields(body, ("token",))
++        owner = self.eos_owner(request, owner)
++        self.api.directory.rate("eos-room:" + owner[1], 120)
++        identity = self.api.directory.eos_identity
++        puid = identity.proof_subject(body["token"])
++        account = await identity.verify(puid, body["token"])
++        room, player = self.eos_owner(request, owner)
++        require(account == player, "EOS identity belongs to another account", 403)
++        # No await separates capability revalidation, immutable binding and the
++        # room-local proof receipt. Social/account sessions are left untouched.
++        identity.bind_player(player, puid)
++        room.eos_verified[player] = puid
++        return web.json_response(dict(eos_product_user_id=puid))
+ 
+     async def writer(self, room, player, peer):
+         blocked = 0
+@@ -449,7 +491,8 @@
+         # A complete 1400-byte native datagram plus its route byte is valid.
+         socket = web.WebSocketResponse(max_msg_size=120000, compress=False)
+         await socket.prepare(request)
+-        if room.closed or (player in room.peers and not room.direct_udp):
++        if room.closed or (room.eos_account and not secrets.compare_digest(room.tokens.get(player, ""), bearer[7:])) or (
++                player in room.peers and not room.direct_udp):
+             await socket.close(code=1008)
+             return socket
+         peer = Peer(socket)
+@@ -510,6 +553,9 @@
+                         if room.eos:
+                             user = signal["payload"]
+                             require(len(user) == 32 and all(c in "0123456789abcdef" for c in user) and not signal["mid"], "Invalid EOS identity")
++                            if room.eos_account:
++                                require(room.eos_verified.get(player) == user,
++                                        "EOS identity has not been verified for this match", 403)
+                             require(room.eos_users.get(source, user) == user and all(slot == source or value != user
+                                     for slot, value in room.eos_users.items()), "EOS identity changed or reused")
+                             room.eos_users[source] = user
+@@ -691,5 +737,7 @@
+ 
+     def routes(self):
+         return [web.get("/v1/matchmaking/transport", self.descriptor),
++                web.post("/v1/matches/{room}/eos-token", self.eos_token),
++                web.post("/v1/matches/{room}/eos-proof", self.eos_proof),
+                 web.get("/v1/matches/{room}/signal", self.connect),
+                 web.get("/v1/matches/{room}/relay", self.connect)]

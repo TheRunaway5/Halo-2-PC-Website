@@ -93,6 +93,31 @@ retained unchanged. A server-created join timestamp is immutable. Pre-existing
 accounts without a timestamp remain unknown. Current customization and the
 historical 16-byte PCR appearance are separate records.
 
+## Account-authenticated room transport (v14, local only)
+
+The [v14 contract](account-transport-v14.json) and exact
+[master deployment patch](account-transport-v14.patch) add room-bearer EOS
+Connect authentication. The existing Python master remains the canonical owner
+of room authorization; its existing Rust SDK worker verifies the EOS proof.
+No second master source tree or new issuer/key/provider mapping is introduced.
+
+A current physical room owner posts `{}` to
+`/v1/matches/{room}/eos-token`, exchanges that short-lived OpenID token through
+EOS Connect, then posts only the returned EOS ID token as `{"token":"..."}` to
+`/v1/matches/{room}/eos-proof`. The server returns the verified
+`eos_product_user_id`. Callers cannot select a private player UUID or PUID.
+V14 signaling accepts only that account-bound identity; v13 retains its existing
+anonymous behavior and cannot share a match with v14. Social sessions remain
+active. The v14 setup window is120 seconds; v13 keeps60 seconds. Verification
+admission waits at most2 seconds before a transient503; the owned worker has
+a separate20-second creation/write/read budget. Cancelling a queued caller
+preserves the active worker, while cancelling its owner retires that stream
+before another proof can use it.
+
+These changes are local and have not been deployed. The contract records source
+hashes, authorization/retirement guards and validation limits. Production rollout
+and a playable two-account join remain separate acceptance steps.
+
 ## Credentials and permissions
 
 Use a separate server-only **H2Forever Profile Publisher** client policy with

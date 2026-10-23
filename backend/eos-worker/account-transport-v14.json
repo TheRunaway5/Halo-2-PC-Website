@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "status": "local qualified implementation; not deployed",
+  "canonical_owner": "Halo-2-Decompiled multiplayer/master_server owns account authorization and room capabilities; this website repository retains the exact deployment patch and contract, alongside the existing trusted Rust EOS worker.",
+  "problem": "Anonymous DeviceID identities are shared by ordinary clients in one OS namespace, so two accounts on one PC can be rejected as the same EOS transport user.",
+  "compatibility": {
+    "new": "halo2-native-queue-v14",
+    "old": "halo2-native-queue-v13",
+    "mixed_groups": "Never matched together; no silent downgrade",
+    "v14_setup_deadline_seconds": 120,
+    "v13_setup_deadline_seconds": 60,
+    "descriptor_shape": "Unchanged eos-p2p-v1 socket/peers/session metadata; v14 clients explicitly choose account login."
+  },
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/v1/matches/{room}/eos-token",
+      "authorization": "Bearer of a current, live, verified physical room owner",
+      "request": {},
+      "response": {
+        "token": "Short-lived signed OpenID ID Token; stable private account subject supplied by server only",
+        "expires_in": 120
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/v1/matches/{room}/eos-proof",
+      "authorization": "Same current physical room-owner bearer",
+      "request": {
+        "token": "EOS Connect ID Token from the official SDK"
+      },
+      "response": {
+        "eos_product_user_id": "Verified account-bound32lowerhex PUID"
+      }
+    }
+  ],
+  "security": [
+    "Onlyv14 rooms accept these routes; v13 returns409 and retains its anonymous signaling behavior.",
+    "Guest seats have no room bearer and cannot choose a player UUID/PUID.",
+    "JWT sub is decoded only as a bounded untrusted routing hint for the existing official EOS VerifyIdToken worker. It confers no authorization.",
+    "Worker verifies expected OpenID provider, client, product, sandbox, deployment and PUID; returned verified master account must equal the bearer-derived physical owner.",
+    "Room object identity, closed/deadline state, physical owner and current bearer are revalidated after request body reads and SDK verification.",
+    "Existing immutable eos_players binding and first-bind publication outbox are reused; repeat proof does not advance publication revision.",
+    "V14 peer signals must match the room-local verified binding, and existing distinct/unchanged physical peer identity guards remain.",
+    "Issuer/proof share a120/minute owner bucket; pending32 bound remains; queue admission is bounded to2 seconds and the owned worker create/write/read operation to20 seconds. Queued refusal/cancellation cannot close another caller\u2019s worker; owned cancellation retires the stream before unlocking.",
+    "No social/account session is created, replaced or revoked; no trusted credentials, OpenID mapping, issuer or key is added."
+  ],
+  "source_sha256": {
+    "multiplayer/master_server/couch_players.py": "8c48e255090fad6d093ee5d5418a2170bd3ff33ec92d504934f49fcb5a42a24f",
+    "multiplayer/master_server/eos_identity.py": "89c1a3fba37a7bf96e6ea45a1d8dd0227a2db56053295d8e1a5d30a1a3176eda",
+    "multiplayer/master_server/match_transport.py": "313e2328f839ad9316b2d0146b4f0373b9d7953da574db14bca5764864845173",
+    "multiplayer/master_server/tests/test_eos_room_identity.py": "0e66d1cd1ec3777f3f6a9d39c3d7b1586b1f799e52bf755f798bf3b31e663911",
+    "multiplayer/master_server/tests/test_eos_verification_queue.py": "de4982232d5862b3a1a684520dc4bd0b644fe7f130619e53020dcf15eb35c8d7"
+  },
+  "deployment_patch": {
+    "path": "account-transport-v14.patch",
+    "sha256": "e79e9cf46fb40da07aa392264b59e6ccafd3d44f288de5bef0dc6b2045a73074"
+  },
+  "validation_limits": [
+    "HTTP tests use the explicit official-worker verification boundary; no live player/production HTTP mutation or rollout is implied.",
+    "Actual SDK shared-namespace rejection and isolated-namespace acceptance are separate bounded source-pinned evidence in Halo-2-Decompiled analysis/eos-live-matchmaking-failure-20261023.",
+    "Native end-to-end account transport and playable two-client join require separate qualification."
+  ]
+}
