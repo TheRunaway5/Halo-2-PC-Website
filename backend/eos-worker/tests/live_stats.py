@@ -7,7 +7,7 @@ import subprocess
 import time
 
 
-def qualify(source,root,env,server_config,game_config):
+def qualify(source,root,env,server_config,game_config,*,master_source=None,master_tests=None,node='node'):
     binary=root/'device-fixture'
     subprocess.run(['c++','-std=c++20',str(source/'tests/device_fixture.cpp'),'-I'+str(root/'SDK/Include'),
         '-L'+str(root/'SDK/Bin'),'-lEOSSDK-Linux-Shipping','-o',str(binary)],env=env,check=True)
@@ -63,7 +63,18 @@ def qualify(source,root,env,server_config,game_config):
             raise RuntimeError('EOS leaderboard did not observe the current level')
         board_score(3);board_score(1)
         print('EOS qualification: populated leaderboard and lowering current level observed',flush=True)
-        return dict(passed=True,boards_queried=len(boards),board_rank_decrease=True,scope='Real trusted server SDK publication to one isolated test PUID; not production account binding',fields=len(stats),duplicate_safe=True,latest_decrease_and_clear=True,user_hash=hashlib.sha256(user.encode()).hexdigest())
+        report=dict(passed=True,boards_queried=len(boards),board_rank_decrease=True,scope='Real trusted server SDK publication to one isolated test PUID; not production account binding',fields=len(stats),duplicate_safe=True,latest_decrease_and_clear=True,user_hash=hashlib.sha256(user.encode()).hexdigest())
+        if master_source:
+            from accepted_result_fixture import generate
+            manifest=generate(master_source,master_tests,root/'accepted-results')
+            result=subprocess.run([str(node),str(source/'tests/live_result_publication.ts'),str(manifest),str(root/'result-publication.sqlite3')],
+                env=private|{'H2_EOS_QUALIFICATION_USER':user,'H2_EOS_WORKER':str(root/'target/release/halo2-eos-worker'),
+                    'H2_EOS_SERVER_CONFIG':str(server_config.resolve()),'H2_EOS_SERVER_CACHE_DIR':str(root/'result-server-cache')},
+                capture_output=True,text=True,timeout=420)
+            if result.returncode:raise RuntimeError('Accepted-result publication failed: '+result.stderr[-4000:])
+            report['accepted_results']=json.loads(result.stdout.strip().splitlines()[-1])
+            if report['accepted_results'].get('passed') is not True:raise RuntimeError('Accepted-result publication returned no proof')
+        return report
     finally:
         process.terminate()
         try:process.wait(5)

@@ -17,10 +17,20 @@ def main():
     parser.add_argument('--report',type=Path)
     parser.add_argument('--server-config',type=Path)
     parser.add_argument('--game-config',type=Path)
+    parser.add_argument('--master-source',type=Path,
+                        help='Exact master source for isolated accepted-result HTTP/ledger qualification')
+    parser.add_argument('--master-tests',type=Path,
+                        help='Matching master HTTP fixture sources; requires --master-source and live configs')
+    parser.add_argument('--node',type=Path,default=Path('node'))
     args=parser.parse_args()
     if platform.system()!='Linux' or platform.machine()!='x86_64':
         parser.error('This validation runner currently covers Linux x86_64')
     if bool(args.server_config)!=bool(args.game_config):parser.error('Live qualification requires both private config paths')
+    if bool(args.master_source)!=bool(args.master_tests) or (args.master_source and not args.server_config):
+        parser.error('Accepted-result qualification requires both master paths and live configs')
+    if args.master_source:
+        version=subprocess.check_output([str(args.node),'--version'],text=True).strip().lstrip('v').split('.')
+        if int(version[0])!=26 or int(version[1])<12:parser.error('Accepted-result qualification requires Node >=26.12 and <27')
     source=Path(__file__).resolve().parent
     with tempfile.TemporaryDirectory(prefix='eos-worker-',dir=os.environ.get('HALO2_TEST_SCRATCH')) as temporary:
         root=Path(temporary)
@@ -44,11 +54,20 @@ def main():
                 'sdk_sha256':hashlib.sha256(args.sdk_archive.read_bytes()).hexdigest(),
                 'commands':results,'scratch':str(root),'large_artifacts_retained':False,
                 'sources':{str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [source/'Cargo.toml',source/'Cargo.lock',source/'build.rs',*sorted((source/'src').glob('*'))]}}
+        if args.master_source:
+            report['accepted_result_sources']={str(p.relative_to(source.parent.parent)):hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in [source/'tests/accepted_result_fixture.py',source/'tests/live_result_publication.ts',
+                          source/'tests/live_stats.py',source.parent.parent/'scripts/eos-service.ts',source.parent.parent/'scripts/public-ranks.ts']}
+            report['master_sources']={str(p.relative_to(args.master_source)):hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in sorted(args.master_source.rglob('*')) if p.is_file() and p.suffix in ('.py','.json') and '__pycache__' not in p.parts}
+            report['master_fixture_sources']={name:hashlib.sha256((args.master_tests/name).read_bytes()).hexdigest()
+                for name in ('test_couch_online.py','test_match_transport.py','test_matchmaking_http.py','test_ranked_results.py')}
         if report['passed'] and args.server_config:
             import sys
             sys.path.insert(0,str(source/'tests'))
             from live_stats import qualify
-            try:report['live']=qualify(source,root,env,args.server_config,args.game_config)
+            try:report['live']=qualify(source,root,env,args.server_config,args.game_config,
+                master_source=args.master_source,master_tests=args.master_tests,node=args.node)
             except Exception as error:
                 report['passed']=False
                 report['live']={'passed':False,'error':str(error)[:512]}

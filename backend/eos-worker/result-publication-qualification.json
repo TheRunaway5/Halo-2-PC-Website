@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "scope": "Isolated accepted-result HTTP/ledger to current TypeScript publisher and real trusted EOS SDK; declared PCR fixtures, not played native matches",
+  "node": {
+    "version": "v26.12.0",
+    "archive_sha256": "fd47865ecd6391ebb431fc815e01b9135bf83ded5cf373247e9331e196b7aded"
+  },
+  "sdk_sha256": "56a3bd805df426606946d74ba662f25223ffe24159e7884a625225ba80b582fb",
+  "worker_sources": {
+    "Cargo.toml": "430713395d3ff86aca3681b87275d2d21547c4977451460aadd5da298d4d1d34",
+    "Cargo.lock": "3ec7ef8a89b047a86b45f6409a0bc3cfd0ce404a8b00d7fb0c5dbf6a208d4599",
+    "build.rs": "4986762236dd50d5fb60f2269c9670e564363c576cbce4843f4f95650cc546c2",
+    "src/main.rs": "21b3e27da43d6c103797aa96152a6aab38e4d992f5f738a006cf6a5f82af40eb",
+    "src/sdk.cpp": "4e4cb1ac248b1345ec007274689903dc0315c7782469461d50dadd68ddf8e503",
+    "src/sdk.hpp": "ef0f572c982677a6f4f2602dbf08840e3ddbe19db20030f4ebef3ae154ca99e4"
+  },
+  "pipeline_sources": {
+    "backend/eos-worker/tests/accepted_result_fixture.py": "2d707a7b3bad1e5a7b328744bd9c32a6a145d800250309aa42082853d2d91830",
+    "backend/eos-worker/tests/live_result_publication.ts": "797f4e5d70d4791f7a48027b03f51890d4ee4adc0d308cf998f705882aae9bde",
+    "backend/eos-worker/tests/live_stats.py": "bfa90432f8f26993be18cb60e9eee679dc14a3f4693b2aee93883ace88678f6e",
+    "scripts/eos-service.ts": "0389c6ef1f4e9b6bf7efc293e8c9e634f4decae19d48cc08423655f0c2ff7e28",
+    "scripts/public-ranks.ts": "a6cbcb42ef2f84b8d056235d93aa9493f22b134bffb2fb5531bd9c3601837682"
+  },
+  "master_fixture_sources": {
+    "test_couch_online.py": "265fc26e2541f4204bcf28cc6be93b05424241e4ceadf2583ab93601e304b56a",
+    "test_match_transport.py": "f1f399f15a3aa24886317f5a6e768b6ca95c736aec3ee4c1a5a624e342c1a92b",
+    "test_matchmaking_http.py": "d7a331c5b3195bb8f635be26712dd03d37d39545521ce39003866373e4c9d6fb",
+    "test_ranked_results.py": "d998b01512824b15cdf44b2d3bf0131e17be7982e9be0dfeba5e77f8e7bedaae"
+  },
+  "accepted_results": {
+    "passed": true,
+    "cases": 2,
+    "guest_slots_excluded": 6,
+    "ranked_level": 2,
+    "duplicate_safe": true,
+    "restart_preserves_readback": true,
+    "ambiguous_reply_retry": true,
+    "ranked_leaderboard_readback": true,
+    "receipts": [
+      {
+        "name": "casual",
+        "report_sha256": "bbecbc5f10480ef6ea8e81dafe4eff23b9c8c0bc0d9bc6f09519e7217ff5a56b",
+        "expected": {
+          "matches": 1,
+          "wins": 1,
+          "kills": 7,
+          "deaths": 2,
+          "assists": 3,
+          "shots": 20,
+          "hits": 8,
+          "accuracy_matches": 1,
+          "accuracy_complete": true
+        },
+        "ranked_level": null,
+        "guest_slots": 6
+      },
+      {
+        "name": "ranked",
+        "report_sha256": "39f6f2966047a5828c3021792f3174b644a3b8648a452cf081beba0dacfa7c07",
+        "expected": {
+          "matches": 2,
+          "wins": 2,
+          "kills": 12,
+          "deaths": 3,
+          "assists": 5,
+          "shots": 30,
+          "hits": 14,
+          "accuracy_matches": 2,
+          "accuracy_complete": true
+        },
+        "ranked_level": 2,
+        "guest_slots": 0
+      }
+    ],
+    "scope": "Real master HTTP/ledger to TypeScript publisher and real EOS SDK for one isolated device-test PUID; declared PCR fixtures, not played native matches"
+  },
+  "production_comparison": {
+    "passed": true,
+    "master_files_match": 34,
+    "website_sources": {
+      "scripts/eos-service.ts": "0389c6ef1f4e9b6bf7efc293e8c9e634f4decae19d48cc08423655f0c2ff7e28",
+      "scripts/public-ranks.ts": "a6cbcb42ef2f84b8d056235d93aa9493f22b134bffb2fb5531bd9c3601837682"
+    },
+    "website_node": "v26.12.0",
+    "master_image": "halo2-master-eos:20261023T040824Z-refresh-capacity",
+    "publisher_matches_qualified_sources": true,
+    "scope": "Read-only comparison with current deployed master and website publisher; isolated SDK fixture does not mutate production player records"
+  },
+  "scratch_removed": true,
+  "large_artifacts_retained": false,
+  "limits": [
+    "Fixture identities use local mock authentication and bind only one isolated device-test PUID. No production player records are changed.",
+    "Native played-match, live relay, physical microphone and full-world host migration acceptance remain outstanding."
+  ],
+  "website_tests": 16,
+  "typecheck_passed": true,
+  "validation_driver_sha256": "6fc032bb5099ecec4304851910ee3d2491ad28370bcf485621f781b4be072996"
+}

@@ -370,3 +370,23 @@ still permits a verified login without persistence; it never evicts another
 player. Nineteen scoped HTTP regressions and the actual image checks passed.
 The rollout retained a private SQLite backup and verified all deployed source
 hashes and service health.
+
+
+The optional `validate.py --master-source PATH --master-tests PATH --node PATH`
+qualification connects the actual master HTTP/result ledger to the TypeScript
+publisher and real EOS SDK. Supply both existing live config arguments and a
+Node 26 runtime at version 26.12 or newer. Run it inside the game's
+`tools/run_test.py` owner; SDKs, Node artifacts, fixtures and databases remain in
+its disposable storage. The master source can be the exact deployed overlay;
+the matching master test sources supply explicit local authentication and PCR
+fixtures. Only an isolated generated device-test EOS account receives writes.
+
+This qualification passed casual and ranked results in one cumulative ledger,
+with six guest seats excluded, exact career/accuracy increments, original Halo
+skill, separate playlist counters, actual ranked leaderboard read-back, duplicate
+commits, lost publication replies and publisher restart. All 34 deployed master
+files and both website publisher sources matched the qualified source hashes.
+Node type checking and all 16 website tests passed. The fixtures are declared PCR
+inputs; this does not establish a played native match, relay gameplay, physical
+microphone playback or complete-world host migration. See
+[result-publication-qualification.json](result-publication-qualification.json).
