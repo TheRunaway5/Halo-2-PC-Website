@@ -354,7 +354,19 @@ leadership, capacity, blocks, consent and match rules still apply.
 
 Eighteen applicable HTTP regressions and the actual image's schema/routes,
 health and deployed source hashes passed. The separate party roster appearance
-extension is excluded from this production overlay. The client rebuild and
-two-account join check remain pending. See
+extension is excluded from this production overlay. The installed native
+replacement passed four focused identity/party tests, eight launcher checks,
+twelve MCC submitted-frame cases and four frontend screens. Both launcher names
+select that build; all eighteen installed Xbox/PlayStation prompt files match
+the project's authenticated banks. The real two-account join check remains
+pending at the user's request. See
 [the source overlay](steam-social-and-remembered-login.patch) and
 [the rollout receipt](steam-social-rollout.json).
+
+The follow-up `halo2-master-eos:20261023T040824Z-refresh-capacity` gives
+thirty-day remembered credentials a separate 100,000-entry budget and indexes
+expiry, account rotation and revocation lookups. A full remembered-token budget
+still permits a verified login without persistence; it never evicts another
+player. Nineteen scoped HTTP regressions and the actual image checks passed.
+The rollout retained a private SQLite backup and verified all deployed source
+hashes and service health.

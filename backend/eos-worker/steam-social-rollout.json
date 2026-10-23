@@ -1,12 +1,31 @@
 {
   "passed": true,
-  "image": "halo2-master-eos:20261023T031806Z-social",
-  "rollback_image": "halo2-master-eos:20261023T000037Z-career-indexes",
+  "image": "halo2-master-eos:20261023T040824Z-refresh-capacity",
+  "rollback_image": "halo2-master-eos:20261023T031806Z-social",
   "deployed_hashes": {
     "service.py": "3439e3e931be24ccb136a7fdfe55be2baa988f7b6646ab429950c0098db70424",
-    "steam_login.py": "622112f31609518d5ae18feb7e7aef89feef85daa6724d9f7d4f72af42a210aa",
+    "steam_login.py": "af39b610bccea17b136b85b8d650fdbae06c3c5936ea6fffe859edaddf1379f2",
     "steam_friends.py": "8e87c60ece8b1eec529fd6b9b456d8265852cd089670c65da8f348e7be9f2e5f",
     "parties_http.py": "ac25a4f5fa30ca5b78f4f08b740af8314f3044e48eac9c2afbc078474fc1c581"
   },
-  "backup_bytes": 479232
+  "backup_bytes": 495616,
+  "online_users": 0,
+  "http_tests": 19,
+  "scope": "Remembered per-profile Steam login, online Steam and clan party invitations; independent bounded refresh storage and indexed expiry; preserves current party rules",
+  "native_delivery": {
+    "runtime": "bin/engine-builds/2571dcba509a4e73a68866885022f7de/halo2_native",
+    "sha256": "7159a615127d52d25de19b388dd199be37b09b90b5430ca693e72c1f109abbc5",
+    "installed_launchers": [
+      "Halo2-Launcher",
+      "Halo2-Title-Launcher"
+    ],
+    "focused_tests": 4,
+    "launcher_checks": 8,
+    "mcc_submitted_frame_cases": 12,
+    "frontend_screens": 4,
+    "project_prompt_files": 18,
+    "build_scratch_removed": true,
+    "retained_runtime_bytes": 312259347,
+    "limits": "Live two-account matchmaking, completed-match publication, cross-network microphone and complete-world host migration remain unverified"
+  }
 }
