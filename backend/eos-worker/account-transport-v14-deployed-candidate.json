@@ -1,0 +1,205 @@
+{
+  "schema": "halo2-eos-account-v14-deployed-candidate-v1",
+  "candidate": {
+    "image_tag": "halo2-master-eos:20261023T173530Z-account-v14-candidate",
+    "image_id": "sha256:98f5fe3e39664418ab365b14cef454cfd579b0c59a226ff2c038b58065a35fa4",
+    "size_bytes": 274493719,
+    "incremental_bytes": 92908,
+    "source_sha256": {
+      "multiplayer/master_server/__init__.py": "385d8883ff62bfe0b34bebd921bc155853ff3fd840b838ca214b6710eb327f84",
+      "multiplayer/master_server/__main__.py": "6e049d4272cb2183ebad6e66565360a7710b2b7677218b0a2895f78a406a8867",
+      "multiplayer/master_server/carnage_history.py": "0cb5d7140f8f5edbb1b8b05919cf5b03f7d3928d9461a3f83d21da51ed0b0689",
+      "multiplayer/master_server/clan_skill.py": "0bf9dec78264e9972fe7a4fa1a48045b904ec2d6aaebf45c0822dde94475fd86",
+      "multiplayer/master_server/clan_voice.py": "45a9e0e0f4f6df5c9d0a997eb022a18fa09ebbe867781a400c5c2684cde38ca8",
+      "multiplayer/master_server/clans_http.py": "74832a90766aaca48edb8126dee842c0c47d8f1d5dbc65a07e508e61a799e570",
+      "multiplayer/master_server/cli.py": "c695f5b8597f5181c3779d55ad913790df8d7b11d88d2652d2224684de5cf6a7",
+      "multiplayer/master_server/couch_players.py": "8c48e255090fad6d093ee5d5418a2170bd3ff33ec92d504934f49fcb5a42a24f",
+      "multiplayer/master_server/data/retail-launch-2004-rank.json": "5b5760a487d6af59da885edb89f2d7d7e76df5fa0d2379cb7a43ff9dfa3e55bd",
+      "multiplayer/master_server/data/title-update-1.5-rank.json": "9ad56e3c3ef7249e8ada858a29016b4ecaca0148b9deb4efe87efa7ded15c58f",
+      "multiplayer/master_server/eos_identity.py": "89c1a3fba37a7bf96e6ea45a1d8dd0227a2db56053295d8e1a5d30a1a3176eda",
+      "multiplayer/master_server/gathering_sessions.py": "885ce6247c7be947f58a64471b3959fbc25d9a57127ae34289c16d35ab336c1d",
+      "multiplayer/master_server/match_continuity.py": "532f6389bb77f4fa76bfaf3733065b2791f51070c336843f2a7e4293187fc79f",
+      "multiplayer/master_server/match_results.py": "009c7539feeef1524859be6f86d5b4a7ac1e245e743b776e2b460e7fae78011c",
+      "multiplayer/master_server/match_transport.py": "8c22632aabea40d68f2190db3e7961dd68fb8383d8cd886355363997bf403b1d",
+      "multiplayer/master_server/matchmaking.py": "6d3d2de73b3b8c427e9e862cbcf8673db3067b185b9f2ef364cd1240dcc4aace",
+      "multiplayer/master_server/matchmaking_demo.py": "01407108eb9532f5ecfadb39243f5e5f1c534cd50c929bd2f782526ffe71d382",
+      "multiplayer/master_server/matchmaking_http.py": "268bbbe53b517db3acedf4c01c6991a6885257cdbafbe1c115653bda463b2daa",
+      "multiplayer/master_server/parties_http.py": "ac25a4f5fa30ca5b78f4f08b740af8314f3044e48eac9c2afbc078474fc1c581",
+      "multiplayer/master_server/player_identity.py": "623d931480c3e0fcf8cef125d94347ad4f419deb5dadf44449d9a8a78b0fdc7e",
+      "multiplayer/master_server/player_presence.py": "23c8e565439434da63f63b97fc273aa2219069a19174c9284b882ea0e1d86dc4",
+      "multiplayer/master_server/player_profile.py": "e27f72cd1d7fe00404f4197f2eb5149e2b9c43afecc7a9231edcca259be8a205",
+      "multiplayer/master_server/player_statistics.py": "84369ba26cfb9db39d5eb7c5c07cd5dcddb619862174d231a85e0582906f4904",
+      "multiplayer/master_server/playlist_skill.py": "1c71413fc9c51a0ecd9c176d94d415a80a2f6cd636e0568c9d493e058efa9819",
+      "multiplayer/master_server/protocol.py": "7636b70b61160abeadafbefd2ae15fad1c642489a80251bdc4fbcde847a4e786",
+      "multiplayer/master_server/requirements.txt": "b8d6ea6ebcc135c3f52324e0585996cc7ee62154c44361a7cbf23c512a9a5157",
+      "multiplayer/master_server/retail_gathering.json": "96dddab690fe3a008fd7eb9d38c6c04634b44a115d5baf1b3fef07da44cd8198",
+      "multiplayer/master_server/search_lifecycle.py": "666fba61d77fdfa37569f023215239e88951971013963ee233a839e91c26e646",
+      "multiplayer/master_server/search_qos.py": "7fe4f36876196ba410ac192615a1c7e23c00c1d1ca4eeea0ff6d05c84700a473",
+      "multiplayer/master_server/service.py": "3439e3e931be24ccb136a7fdfe55be2baa988f7b6646ab429950c0098db70424",
+      "multiplayer/master_server/session_candidates.py": "b2ca6d355e27d1cdf1fdbfb637a8d19a16e10ac1089e16032c2fb2b8959d79d4",
+      "multiplayer/master_server/steam_friends.py": "8e87c60ece8b1eec529fd6b9b456d8265852cd089670c65da8f348e7be9f2e5f",
+      "multiplayer/master_server/steam_login.py": "af39b610bccea17b136b85b8d650fdbae06c3c5936ea6fffe859edaddf1379f2",
+      "multiplayer/master_server/store.py": "bc6b6d9c986996dbb607aa9f10862f5f8f5830452ed1adce627ca4829918bd38",
+      "multiplayer/master_server/voice_blocks.py": "0c9a292223dbfc086595930529392ee3798837747d34763dee215327ee751f8f",
+      "requirements.txt": "b8d6ea6ebcc135c3f52324e0585996cc7ee62154c44361a7cbf23c512a9a5157"
+    }
+  },
+  "baseline": {
+    "image_tag": "halo2-master-eos:20261023T040824Z-refresh-capacity",
+    "image_id": "sha256:ddd0682cecbdb2301936ef5cd291ffa6e70ca403fd68bb0dc22fb7489d545809",
+    "source_sha256": {
+      "multiplayer/master_server/__init__.py": "385d8883ff62bfe0b34bebd921bc155853ff3fd840b838ca214b6710eb327f84",
+      "multiplayer/master_server/__main__.py": "6e049d4272cb2183ebad6e66565360a7710b2b7677218b0a2895f78a406a8867",
+      "multiplayer/master_server/carnage_history.py": "0cb5d7140f8f5edbb1b8b05919cf5b03f7d3928d9461a3f83d21da51ed0b0689",
+      "multiplayer/master_server/clan_skill.py": "0bf9dec78264e9972fe7a4fa1a48045b904ec2d6aaebf45c0822dde94475fd86",
+      "multiplayer/master_server/clan_voice.py": "45a9e0e0f4f6df5c9d0a997eb022a18fa09ebbe867781a400c5c2684cde38ca8",
+      "multiplayer/master_server/clans_http.py": "74832a90766aaca48edb8126dee842c0c47d8f1d5dbc65a07e508e61a799e570",
+      "multiplayer/master_server/cli.py": "c695f5b8597f5181c3779d55ad913790df8d7b11d88d2652d2224684de5cf6a7",
+      "multiplayer/master_server/couch_players.py": "e835118bbf5bb2c127a42b543b22de52b647388fed190b2967d7aeff9ec91b60",
+      "multiplayer/master_server/data/retail-launch-2004-rank.json": "5b5760a487d6af59da885edb89f2d7d7e76df5fa0d2379cb7a43ff9dfa3e55bd",
+      "multiplayer/master_server/data/title-update-1.5-rank.json": "9ad56e3c3ef7249e8ada858a29016b4ecaca0148b9deb4efe87efa7ded15c58f",
+      "multiplayer/master_server/eos_identity.py": "c4ffcc601446ef253873dcd73926084f8f1fc0dcd8c3519967a9eb270bbd8e97",
+      "multiplayer/master_server/gathering_sessions.py": "885ce6247c7be947f58a64471b3959fbc25d9a57127ae34289c16d35ab336c1d",
+      "multiplayer/master_server/match_continuity.py": "532f6389bb77f4fa76bfaf3733065b2791f51070c336843f2a7e4293187fc79f",
+      "multiplayer/master_server/match_results.py": "009c7539feeef1524859be6f86d5b4a7ac1e245e743b776e2b460e7fae78011c",
+      "multiplayer/master_server/match_transport.py": "26856474a6125d9f261686b4a69268d14ba45759fc49530f5ba601f4a5d9ee30",
+      "multiplayer/master_server/matchmaking.py": "6d3d2de73b3b8c427e9e862cbcf8673db3067b185b9f2ef364cd1240dcc4aace",
+      "multiplayer/master_server/matchmaking_demo.py": "01407108eb9532f5ecfadb39243f5e5f1c534cd50c929bd2f782526ffe71d382",
+      "multiplayer/master_server/matchmaking_http.py": "268bbbe53b517db3acedf4c01c6991a6885257cdbafbe1c115653bda463b2daa",
+      "multiplayer/master_server/parties_http.py": "ac25a4f5fa30ca5b78f4f08b740af8314f3044e48eac9c2afbc078474fc1c581",
+      "multiplayer/master_server/player_identity.py": "623d931480c3e0fcf8cef125d94347ad4f419deb5dadf44449d9a8a78b0fdc7e",
+      "multiplayer/master_server/player_presence.py": "23c8e565439434da63f63b97fc273aa2219069a19174c9284b882ea0e1d86dc4",
+      "multiplayer/master_server/player_profile.py": "e27f72cd1d7fe00404f4197f2eb5149e2b9c43afecc7a9231edcca259be8a205",
+      "multiplayer/master_server/player_statistics.py": "84369ba26cfb9db39d5eb7c5c07cd5dcddb619862174d231a85e0582906f4904",
+      "multiplayer/master_server/playlist_skill.py": "1c71413fc9c51a0ecd9c176d94d415a80a2f6cd636e0568c9d493e058efa9819",
+      "multiplayer/master_server/protocol.py": "7636b70b61160abeadafbefd2ae15fad1c642489a80251bdc4fbcde847a4e786",
+      "multiplayer/master_server/requirements.txt": "b8d6ea6ebcc135c3f52324e0585996cc7ee62154c44361a7cbf23c512a9a5157",
+      "multiplayer/master_server/retail_gathering.json": "96dddab690fe3a008fd7eb9d38c6c04634b44a115d5baf1b3fef07da44cd8198",
+      "multiplayer/master_server/search_lifecycle.py": "666fba61d77fdfa37569f023215239e88951971013963ee233a839e91c26e646",
+      "multiplayer/master_server/search_qos.py": "7fe4f36876196ba410ac192615a1c7e23c00c1d1ca4eeea0ff6d05c84700a473",
+      "multiplayer/master_server/service.py": "3439e3e931be24ccb136a7fdfe55be2baa988f7b6646ab429950c0098db70424",
+      "multiplayer/master_server/session_candidates.py": "b2ca6d355e27d1cdf1fdbfb637a8d19a16e10ac1089e16032c2fb2b8959d79d4",
+      "multiplayer/master_server/steam_friends.py": "8e87c60ece8b1eec529fd6b9b456d8265852cd089670c65da8f348e7be9f2e5f",
+      "multiplayer/master_server/steam_login.py": "af39b610bccea17b136b85b8d650fdbae06c3c5936ea6fffe859edaddf1379f2",
+      "multiplayer/master_server/store.py": "bc6b6d9c986996dbb607aa9f10862f5f8f5830452ed1adce627ca4829918bd38",
+      "multiplayer/master_server/voice_blocks.py": "0c9a292223dbfc086595930529392ee3798837747d34763dee215327ee751f8f",
+      "requirements.txt": "b8d6ea6ebcc135c3f52324e0585996cc7ee62154c44361a7cbf23c512a9a5157"
+    }
+  },
+  "compose": {
+    "project": "halo2-directory-prod",
+    "service": "directory",
+    "container": "halo2-directory-prod-directory-1",
+    "working_directory": "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server",
+    "files": [
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production.yaml",
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production-matchmaking.yaml",
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.direct-release.yaml",
+      "/opt/halo2/website-api/compose.website-status.json",
+      "/opt/halo2/steam-import-20261016/compose.steam.json",
+      "/opt/halo2/eos-20261022T200436Z/compose.master.json",
+      "/opt/halo2/eos-transport-20261022T214749Z/compose.master.json",
+      "/opt/halo2/eos-profile-cache-20261022T235241Z/compose.master.json",
+      "/opt/halo2/eos-career-indexes-20261023T000037Z/compose.master.json",
+      "/opt/halo2/eos-social-20261023T031806Z/compose.social.json",
+      "/opt/halo2/eos-social-capacity-20261023T040824Z/compose.capacity.json"
+    ],
+    "file_sha256": {
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production.yaml": "6c6d44794e172a6259c570ba04847b9c658de851e06bf93b03046ca1ebad3e81",
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production-matchmaking.yaml": "de31e5083393486bf349ddc8361d3a6d561293f6e89c1d6da304fa6c97aff6cd",
+      "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.direct-release.yaml": "d34f81d710e5803b6ff93d86ee01a98ad122cce1e1e344ead857180f8842b3fe",
+      "/opt/halo2/website-api/compose.website-status.json": "9e013619217e8c545af3790f434a3af9c839149765e5ffe2da4065d52c1c44aa",
+      "/opt/halo2/steam-import-20261016/compose.steam.json": "5f40f60c154bd2e318c2e741a799540bf15a0d4099b7748bec08ac4180adbdf3",
+      "/opt/halo2/eos-20261022T200436Z/compose.master.json": "c2b3848750264fd4ba1208e8384daeb39ca1a42b7c5727d78a8810d31e07e435",
+      "/opt/halo2/eos-transport-20261022T214749Z/compose.master.json": "79d8bac710cc15fcb94ae3598e059d8d367e91ecd6643e47e07e64a7b94835c0",
+      "/opt/halo2/eos-profile-cache-20261022T235241Z/compose.master.json": "a770d0a96c08a5fff9ff506812cfe3f04ca971cc1c2737a4348b7b6214c09c8c",
+      "/opt/halo2/eos-career-indexes-20261023T000037Z/compose.master.json": "63dd7819635a6df3139b3e0e98a5b99d93ac2cf4aa66eaaff51a215b4f13fd04",
+      "/opt/halo2/eos-social-20261023T031806Z/compose.social.json": "544fc361405d5809cd8cfdb69119af70bd4d3cb994b33dc1cdebec230fb8ca7c",
+      "/opt/halo2/eos-social-capacity-20261023T040824Z/compose.capacity.json": "03ff7fc9abd1bec6aea072f733fd99d0cd3805aff140b3a78d241ff607636244"
+    },
+    "environment_file": {
+      "path": "/opt/halo2/website-api/compose.variables.env",
+      "sha256": "5961ab46d40a8e57a02055eba9fe825ad2ec32e88f2c2e15f9688ba15263e185"
+    },
+    "bind_file_sha256": {
+      "/opt/halo2/catalogs/tombstone-20261013T225156Z.json": "3b16d1b74c4b096e6e5970229ce822a338318d611feff2e66a17b2aefa3e0ae4",
+      "/opt/halo2/eos-20261022T200436Z/secrets/eos-server.env": "5fee4f4774e64f1e5888fa4c26088e874edb9dfd2ff434a548564512937b2487",
+      "/opt/halo2/steam-secrets/steam-key": "326a97447db78aac6fcc6a0f72b2e6413b14f816a445aab49d4fdccf64049278"
+    },
+    "resolved_directory_sha256": "6e1502e815e015963cbb8dcaa3a91fd96f5a0ced21ba1759926feb1888159149"
+  },
+  "backup": {
+    "state": "/state",
+    "database": "registry.sqlite3",
+    "private_files": [
+      "master-key.json",
+      "eos-openid-key.pem",
+      "admin-token",
+      "peers.json"
+    ],
+    "volume": "halo2-directory-prod_master-data",
+    "destination_prefix": ".rollout-backups"
+  },
+  "health": {
+    "internal": "http://127.0.0.1:8080/v1/health",
+    "public": "https://master.halo2forever.net/v1/health"
+  },
+  "qualification": {
+    "receipt": "/home/eric/Developer/Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/backend-deployed-candidate.json",
+    "sha256": "4a4ba4957d6e5f8ec650916492ce7a78926d4e02b73167239f643e991cb24a0d",
+    "focused": 44,
+    "social": 35,
+    "baseline_exceptions": [
+      "multiplayer.master_server.tests.test_direct_peer_http.DirectPeerHttpTests.test_authenticated_signaling_buffers_and_direct_admission",
+      "multiplayer.master_server.tests.test_parties_http.PartiesHttpTests.test_roster_appearance_uses_current_accepted_member_profiles"
+    ],
+    "new_auth_queue": 17,
+    "image_tests": {
+      "passed": true,
+      "groups": [
+        {
+          "group": "focused",
+          "tests": 44,
+          "loaded": 45,
+          "excluded": [
+            "multiplayer.master_server.tests.test_direct_peer_http.DirectPeerHttpTests.test_authenticated_signaling_buffers_and_direct_admission"
+          ],
+          "errors": 0,
+          "failures": 0,
+          "passed": true
+        },
+        {
+          "group": "social",
+          "tests": 35,
+          "loaded": 36,
+          "excluded": [
+            "multiplayer.master_server.tests.test_parties_http.PartiesHttpTests.test_roster_appearance_uses_current_accepted_member_profiles"
+          ],
+          "errors": 0,
+          "failures": 0,
+          "passed": true
+        }
+      ],
+      "python": "3.13.17"
+    },
+    "image_smoke": {
+      "passed": true,
+      "statuses": {
+        "health": 200,
+        "population": 200,
+        "profile_auth": 401,
+        "room_token_guard": 404,
+        "room_proof_guard": 404
+      },
+      "player_rows": 0,
+      "eos_binding_rows": 0,
+      "private_state": "ephemeral tmpfs",
+      "network": "none"
+    },
+    "scratch_removed_verified": true
+  },
+  "patch": {
+    "path": "/home/eric/Developer/Halo-2-PC-Website/backend/eos-worker/account-transport-v14-deployed.patch",
+    "sha256": "eeb2d8cc1ab11113393515d8d8ab6104827b71636e576965fe530c4dbd1bae97"
+  }
+}
