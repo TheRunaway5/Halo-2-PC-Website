@@ -4,6 +4,7 @@ import { currentSkill, skillsAtMatch } from "./public-ranks.ts";
 import { eosEnvironment } from "./eos-service.ts";
 import { publicSteam } from "./public-steam.ts";
 import { statusService } from "./status-service.ts";
+import { RequestBudgets } from "./request-budgets.ts";
 const port = Number(process.env.PORT ?? 8090);
 const master = process.env.MASTER_INTERNAL_URL ?? "http://directory:8080";
 const serviceStatus = statusService(master);
@@ -20,7 +21,7 @@ const origins = new Set(
     "https://halo2forever.net,https://www.halo2forever.net"
   ).split(","),
 );
-const budgets = new Map<string, { reset: number; count: number }>();
+const budgets = new RequestBudgets();
 const publicHistory =
   /^\/v1\/history\/(players|players\/[a-f0-9-]{36}\/(matches|profile)|matches\/[a-f0-9-]{36})$/;
 const server = createServer(async (req, res) => {
@@ -49,18 +50,12 @@ const server = createServer(async (req, res) => {
           .split(",")[0]
           .trim()
       : client;
-  if (budgets.size > 10000)
-    for (const [k, b] of budgets) if (b.reset < now) budgets.delete(k);
-  let budget = budgets.get(key);
-  if (!budget || budget.reset < now) {
-    if (budgets.size >= 10000 && !budget) {
-      reply(503, { error: "Service busy" });
-      return;
-    }
-    budget = { reset: now + 60000, count: 0 };
-    budgets.set(key, budget);
+  const admission = budgets.consume(key, now);
+  if (admission === 503) {
+    reply(503, { error: "Service busy" });
+    return;
   }
-  if (++budget.count > 90) {
+  if (admission === 429) {
     res.setHeader("Retry-After", "60");
     reply(429, { error: "Rate limited" });
     return;
