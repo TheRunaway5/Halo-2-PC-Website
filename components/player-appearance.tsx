@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState, useMemo } from "react";
-import { RotateCcw, RotateCw } from "lucide-react";
 import type { Player } from "@/lib/types";
 import { profileAppearance } from "@/lib/profile-appearance";
 
@@ -37,15 +36,11 @@ export function PlayerAppearance({ player }: { player: Player }) {
     }).catch((e) => { if (!controller.signal.aborted) setError(e.message); });
     return () => { controller.abort(); model.current?.dispose(); model.current = null; };
   }, [appearance]);
-  return <section className="profile-identity data-panel" aria-label="Player model">
+  return <section className={`profile-identity data-panel${error || !appearance ? " model-unavailable" : ""}`} aria-label="Player model">
     <div className="profile-model-panel">
       <div className="profile-model" ref={host} />
       {!ready && <p className="model-status">{appearance ? (error || "Loading player model…") : "This player has not saved an appearance yet."}</p>}
-      {ready && <div className="model-controls">
-        <button className="button secondary" aria-label="Rotate player model left" onClick={() => model.current?.rotate(.35)}><RotateCcw size={16}/></button>
-        <button className="text-link" onClick={() => model.current?.reset()}>Reset view</button>
-        <button className="button secondary" aria-label="Rotate player model right" onClick={() => model.current?.rotate(-.35)}><RotateCw size={16}/></button>
-      </div>}
+      {ready && <p className="model-interaction-hint" id="model-interaction-hint">Drag to rotate <span aria-hidden="true">↔</span></p>}
     </div>
   </section>;
 }

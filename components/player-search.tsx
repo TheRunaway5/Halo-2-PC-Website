@@ -4,13 +4,12 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
 import { SteamProfileLink } from "./steam-profile-link";
-import { PlayerAppearance, PlayerEmblem } from "./player-appearance";
-import { VistaIntro, VistaLoadingRings } from "./vista-motion";
+import { PlayerServiceRecord } from "./player-service-record";
+import { VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
-import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
+import { api, playerLink } from "@/lib/api";
 import type { MatchPage, Player } from "@/lib/types";
 import { DISPLAY_NAME_LIMIT, displayNameQuery } from "@/lib/player-search";
-import { joinedDate } from "@/lib/profile-appearance";
 import { EmptyState, Loading, SectionTitle } from "./ui";
 export function PlayerSearch() {
   const params = useSearchParams(),
@@ -98,16 +97,16 @@ export function PlayerSearch() {
     }
   }
   return (
-    <div className="page-width interior">
-      <SectionTitle
+    <div className={`page-width interior${id ? " service-record-page" : ""}`}>
+      {!history && <SectionTitle
         number="02"
         eyebrow="PLAYER SERVICE RECORDS"
-        title={history ? <span className="player-name">{history.player.screen_name}<SteamProfileLink player={history.player} /></span> : "Your story. On record."}
+        title={id ? "Player service record" : "Your story. On record."}
       >
         <span className="page-tag">
           <UserRound size={15} /> PLAYER ARCHIVE
         </span>
-      </SectionTitle>
+      </SectionTitle>}
       {!id ? (
         <>
           <p className="page-intro">
@@ -182,123 +181,7 @@ export function PlayerSearch() {
           {loading ? (
             <Loading text="Retrieving service record" />
           ) : history ? (
-            <>
-              <p className="page-intro">
-                Recorded match history
-              </p>
-              <VistaIntro className="profile-strip" track="panel">
-                <PlayerEmblem player={history.player} />
-                <div>
-                  <p className="eyebrow">SERVICE RECORD</p>
-                  <h2 className="player-name">{history.player.screen_name}<SteamProfileLink player={history.player} /></h2>
-                  <p>
-                    {history.player.service_tag ? `[${history.player.service_tag}] · ` : ""}
-                    {joinedDate(history.player.joined_at) ? `Joined ${joinedDate(history.player.joined_at)}` : "Join date not recorded"}
-                  </p>
-                </div>
-                <RankBadge skill={history.player.skill} large />
-                <Link className="text-link" href="/players/">
-                  Find another player <Search size={15} />
-                </Link>
-              </VistaIntro>
-              <div className="profile-overview">
-              <PlayerAppearance player={history.player} />
-              {history.player.statistics && <div className="profile-details data-panel">
-                <div className="panel-caption"><span>CAREER STATISTICS</span><span className="muted">{history.player.statistics_source === "eos" ? "EOS" : "RECORDED RESULTS"}</span></div>
-                <dl>
-                  <div><dt>Matches</dt><dd>{history.player.statistics.matches.toLocaleString()}</dd></div>
-                  <div><dt>Kills / Deaths</dt><dd>{history.player.statistics.kills.toLocaleString()} / {history.player.statistics.deaths.toLocaleString()}</dd></div>
-                  <div><dt>K/D</dt><dd>{ratio(history.player.statistics.kills,history.player.statistics.deaths)}</dd></div>
-                  <div><dt>Shot accuracy</dt><dd>{history.player.statistics.shots > 0 ? `${(100*history.player.statistics.hits/history.player.statistics.shots).toFixed(1)}%` : "—"}</dd></div>
-                </dl>
-                {!history.player.statistics.accuracy_complete && <p className="data-note">Accuracy covers {history.player.statistics.accuracy_matches} matches with detailed weapon data.</p>}
-              </div>}
-              </div>
-              <div className="data-panel">
-                <div className="panel-caption">
-                  <span>POSTGAME CARNAGE REPORTS</span>
-                  <span className="muted">NEWEST FIRST</span>
-                </div>
-                {!history.matches.length ? (
-                  <EmptyState title="No matches recorded yet.">
-                    Completed matches will appear here.
-                  </EmptyState>
-                ) : (
-                  <div className="table-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th scope="col">Match</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Place</th>
-                          <th scope="col">Kills</th>
-                          <th scope="col">Deaths</th>
-                          <th scope="col">K/D</th>
-                          <th scope="col">Report</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {history.matches.map((m) => (
-                          <VistaIntro as="tr" track="postgame" delay={150} key={m.id}>
-                            <td>
-                              <Link
-                                className="match-name"
-                                href={reportLink(m.id)}
-                              >
-                                <strong>{label(m.variant)}</strong>
-                                <small>
-                                  {label(m.map)} · {label(m.playlist)}
-                                </small>
-                              </Link>
-                            </td>
-                            <td className="date-cell">{date(m.completed)}</td>
-                            <td>
-                              <span
-                                className={
-                                  m.placement === 1
-                                    ? "placement winner"
-                                    : "placement"
-                                }
-                              >
-                                {m.placement === 1 ? "1ST" : `#${m.placement}`}
-                              </span>
-                            </td>
-                            <td className="stat-highlight">{m.kills}</td>
-                            <td>{m.deaths}</td>
-                            <td>{ratio(m.kills, m.deaths)}</td>
-                            <td>
-                              <Link
-                                href={reportLink(m.id)}
-                                aria-label={`Open ${label(m.variant)} report from ${date(m.completed)}`}
-                              >
-                                <ArrowUpRight size={18} />
-                              </Link>
-                            </td>
-                          </VistaIntro>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              {history.next ? (
-                <div className="load-more">
-                  <button
-                    className="button secondary"
-                    disabled={older}
-                    onClick={loadOlder}
-                  >
-                    {older ? "Loading…" : "Load older matches"}{" "}
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              ) : (
-                <p className="data-note">
-                  You’ve reached the beginning of this player’s recorded
-                  history.
-                </p>
-              )}
-            </>
+            <PlayerServiceRecord history={history} loadingOlder={older} onLoadOlder={loadOlder} />
           ) : null}
           {error && (
             <div className="inline-error" role="alert">

@@ -827,21 +827,70 @@ tbody tr:nth-child(even) {
   margin: 0;
   overflow: hidden;
 }
-.profile-overview { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px; margin: 24px 0; align-items: start; }
-.profile-overview .profile-details { margin: 0; }
-.profile-overview .profile-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.profile-avatar { display: inline-flex; align-items: center; justify-content: center; width: 76px; height: 76px; flex: 0 0 76px; }
+.service-record-page { padding-top: 38px; }
+.profile-wayfinding { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.profile-wayfinding .eyebrow { font-size: 9px; }
+.profile-wayfinding .text-link { font-size: 12px; white-space: nowrap; }
+.service-record-header { display: flex; align-items: center; gap: 24px; padding: 30px 0; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.service-record-identity { min-width: 0; }
+.service-record-header h1 { display: block; text-wrap: balance; margin: 8px 0 12px; font-size: clamp(30px, 3.7vw, 44px); letter-spacing: -1.4px; line-height: 1.12; }
+.service-record-header .eyebrow { font-size: 9px; }
+.service-record-header h1 .steam-profile-link { margin-left: 8px; }
+.profile-metadata { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; color: var(--muted); font-size: 12px; }
+.service-tag { padding: 2px 8px; border: 1px solid #41617b; color: #bfdef2; font-size: 10px; letter-spacing: 1.5px; }
+.profile-avatar { display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; flex: 0 0 88px; }
 .profile-avatar img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.profile-model-panel { position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 45%, #24486480, #08162300 65%), url('/vista/profile-grid-material.svg') center / cover; }
-.profile-model { width: 100%; height: 430px; }
-.profile-model canvas { display: block; width: 100%; height: 100%; }
-.model-status { position: absolute; top: 48%; width: 100%; padding: 0 24px; text-align: center; color: #9bb4c8; }
-.model-controls { display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 20px 22px; }
-.model-controls .button { padding: 10px; min-height: 38px; }
-.model-controls .text-link { border: 0; background: transparent; cursor: pointer; }
-@media (max-width: 640px) {
-  .profile-overview { grid-template-columns: minmax(0, 1fr); }
-  .profile-model { height: 360px; }
+.service-record-body { display: grid; grid-template-columns: minmax(260px, .82fr) minmax(0, 2fr); grid-template-areas: "model statistics" "model history"; grid-template-rows: auto 1fr; gap: 22px; align-items: start; }
+.service-record-body .profile-identity { grid-area: model; }
+.service-record-body .profile-details { grid-area: statistics; margin: 0; min-width: 0; }
+.profile-match-history { grid-area: history; min-width: 0; }
+.service-record-body .panel-caption h2 { font: inherit; letter-spacing: inherit; color: inherit; }
+.service-record-body .profile-details dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0; gap: 0; }
+.profile-details dl > div { padding: 22px 18px; border-right: 1px solid var(--line); }
+.profile-details dl > div:last-child { border-right: 0; }
+.profile-details dt { font-size: 9px; letter-spacing: .7px; color: #9bb4c8; text-transform: uppercase; }
+.profile-details dd { margin-top: 12px; font-size: clamp(19px, 1.8vw, 26px); line-height: 1.25; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.profile-details dd span { color: #7697b2; font-size: .65em; }
+.profile-accuracy-note { padding: 0 18px 18px; font-size: 10px; color: #809bb2; }
+.profile-statistics-unavailable { padding: 24px 20px; font-size: 13px; }
+.profile-match-history .empty-state { min-height: 235px; padding: 38px 24px; }
+.profile-match-history .empty-state h2 { font-size: 22px; margin-bottom: 12px; }
+.profile-match-history .empty-state svg { width: 26px; height: 26px; margin-bottom: 18px; }
+.profile-match-history th, .profile-match-history td { padding: 15px 13px; }
+.profile-match-history .load-more { margin-top: 18px; }
+.profile-model-panel { position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 45%, #24486480, #08162300 65%), linear-gradient(#07162366, #07162366), url('/vista/profile-grid-material.svg') center / cover; }
+.profile-model { width: 100%; height: 360px; }
+.profile-model canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
+.profile-model canvas.is-dragging { cursor: grabbing; }
+.profile-model canvas:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
+.model-status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #9bb4c8; font-size: 12px; }
+.model-interaction-hint { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 12px 20px 18px; font-size: 10px; letter-spacing: .4px; color: #8ba9bf; }
+.model-interaction-hint span { font-size: 17px; line-height: 1; }
+.model-unavailable .profile-model { height: 220px; }
+@media (max-width: 1000px) and (min-width: 761px) {
+  .service-record-body { grid-template-columns: minmax(230px, .85fr) minmax(0, 1.6fr); }
+  .service-record-body .profile-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-details dl > div { padding: 16px 18px; }
+  .profile-details dl > div:nth-child(2) { border-right: 0; }
+  .profile-details dl > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 760px) {
+  .profile-wayfinding { align-items: flex-start; }
+  .profile-wayfinding .eyebrow { font-size: 7px; letter-spacing: 1.4px; }
+  .profile-wayfinding .text-link { font-size: 10px; gap: 5px; }
+  .service-record-header { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 16px 18px; padding: 24px 0; }
+  .service-record-header .profile-avatar { width: 68px; height: 68px; flex-basis: 68px; }
+  .service-record-identity { grid-column: 2; }
+  .service-record-header h1 { font-size: 30px; letter-spacing: -1px; }
+  .service-record-header .eyebrow { font-size: 8px; }
+  .profile-metadata { font-size: 11px; gap: 8px; }
+  .service-record-header > .rank-large { grid-column: 2; justify-self: start; margin: 0; }
+  .service-record-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "statistics" "model" "history"; gap: 18px; }
+  .service-record-body .profile-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-details dl > div { padding: 18px; }
+  .profile-details dl > div:nth-child(2) { border-right: 0; }
+  .profile-details dl > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .profile-model { height: 300px; }
 }
 .steam-profile-link {
   display: inline-flex;
@@ -1030,25 +1079,6 @@ tbody tr:nth-child(even) {
   align-items: center;
   gap: 10px;
   color: #a3cae4;
-}
-.profile-strip {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  padding: 25px 0;
-  border-top: 1px solid var(--line);
-  margin-bottom: 28px;
-}
-.profile-strip h2 {
-  font-size: 24px;
-  margin-top: 7px;
-}
-.profile-details { margin: 1.25rem 0; }
-.profile-details dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 1.5rem; padding: 1.5rem; }
-.profile-details dt { color: var(--muted); font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; }
-.profile-details dd { margin: .5rem 0 0; font-size: 1.15rem; }
-.profile-strip .text-link {
-  margin-left: auto;
 }
 .date-cell {
   font-size: 11px;
@@ -1598,20 +1628,6 @@ tbody tr:nth-child(even) {
     margin-left: 50px;
     font-size: 10px;
   }
-  .profile-strip {
-    gap: 15px;
-    flex-wrap: wrap;
-  }
-  .profile-strip .text-link {
-    width: 100%;
-    margin-left: 75px;
-  }
-  .profile-strip h2 {
-    font-size: 22px;
-  }
-  .profile-strip .eyebrow {
-    font-size: 8px;
-  }
   .report-meta {
     grid-template-columns: 1fr 1fr;
     gap: 25px 16px;
@@ -1758,9 +1774,6 @@ tbody tr:is(:hover, :focus-within) {
 }
 .rank-large + .text-link {
   margin-left: 0;
-}
-.profile-strip > .rank-large {
-  flex-shrink: 0;
 }
 .systems-panel {
   isolation: isolate;

@@ -90,8 +90,9 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
   let observer: ResizeObserver | undefined;
   let disposed = false;
   const viewProjection = new THREE.Matrix4();
+  const interactions = new AbortController();
   const dispose = () => {
-    disposed = true; observer?.disconnect(); groupGeometries.forEach((g) => g.dispose()); geometry.dispose();
+    disposed = true; interactions.abort(); observer?.disconnect(); groupGeometries.forEach((g) => g.dispose()); geometry.dispose();
     materials.forEach((m) => m.dispose()); textures.forEach((t) => t.dispose()); accumulation.dispose();
     renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove();
   };
@@ -232,6 +233,36 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
     if (shaderError) throw new Error("Your browser could not display the player model.");
     observer = new ResizeObserver(resize);
     observer.observe(host);
-    return { dispose, rotate: (delta: number) => { model.rotation.z += delta; baseModel.rotation.z = model.rotation.z; render(); }, reset: () => { model.rotation.z = baseModel.rotation.z = 0; render(); } };
+    const canvas = renderer.domElement;
+    canvas.tabIndex = 0;
+    canvas.setAttribute("aria-label", "Player model. Drag left or right to rotate, or use the arrow keys. Press Home to reset the view.");
+    const options = { signal: interactions.signal };
+    const rotate = (delta: number) => { model.rotation.z += delta; baseModel.rotation.z = model.rotation.z; render(); };
+    const reset = () => { model.rotation.z = baseModel.rotation.z = 0; render(); };
+    let pointer: number | null = null, previousX = 0;
+    canvas.addEventListener("pointerdown", (event) => {
+      if (!event.isPrimary || event.button !== 0 || pointer !== null) return;
+      pointer = event.pointerId; previousX = event.clientX;
+      canvas.setPointerCapture(pointer); canvas.classList.add("is-dragging");
+      canvas.focus({ preventScroll: true });
+    }, options);
+    canvas.addEventListener("pointermove", (event) => {
+      if (event.pointerId !== pointer) return;
+      const delta = event.clientX - previousX; previousX = event.clientX;
+      rotate(delta / Math.max(canvas.clientWidth, 1) * Math.PI * 2);
+    }, options);
+    const stopDrag = (event: PointerEvent) => {
+      if (event.pointerId !== pointer) return;
+      pointer = null; canvas.classList.remove("is-dragging");
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    };
+    for (const name of ["pointerup", "pointercancel", "lostpointercapture"] as const) canvas.addEventListener(name, stopDrag, options);
+    canvas.addEventListener("dblclick", reset, options);
+    canvas.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault(); rotate(event.key === "ArrowLeft" ? -.2 : .2);
+      } else if (event.key === "Home") { event.preventDefault(); reset(); }
+    }, options);
+    return { dispose };
   } catch (error) { dispose(); throw error; }
 }
