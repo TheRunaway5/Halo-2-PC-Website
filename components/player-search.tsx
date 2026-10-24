@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
 import { SteamProfileLink } from "./steam-profile-link";
-import { PlayerAppearance } from "./player-appearance";
+import { PlayerAppearance, PlayerEmblem } from "./player-appearance";
 import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
@@ -187,16 +187,13 @@ export function PlayerSearch() {
                 Recorded match history
               </p>
               <VistaIntro className="profile-strip" track="panel">
-                <span className="player-emblem large">
-                  {history.player.screen_name.slice(0, 1).toUpperCase()}
-                </span>
+                <PlayerEmblem player={history.player} />
                 <div>
                   <p className="eyebrow">SERVICE RECORD</p>
                   <h2 className="player-name">{history.player.screen_name}<SteamProfileLink player={history.player} /></h2>
                   <p>
                     {history.player.service_tag ? `[${history.player.service_tag}] · ` : ""}
-                    {history.player.appearance ? (history.player.appearance.species === "elite" ? "Elite" : "Spartan") : "Appearance not recorded"}
-                    {" · "}{joinedDate(history.player.joined_at) ? `Joined ${joinedDate(history.player.joined_at)}` : "Join date not recorded"}
+                    {joinedDate(history.player.joined_at) ? `Joined ${joinedDate(history.player.joined_at)}` : "Join date not recorded"}
                   </p>
                 </div>
                 <RankBadge skill={history.player.skill} large />
@@ -204,6 +201,7 @@ export function PlayerSearch() {
                   Find another player <Search size={15} />
                 </Link>
               </VistaIntro>
+              <div className="profile-overview">
               <PlayerAppearance player={history.player} />
               {history.player.statistics && <div className="profile-details data-panel">
                 <div className="panel-caption"><span>CAREER STATISTICS</span><span className="muted">{history.player.statistics_source === "eos" ? "EOS" : "RECORDED RESULTS"}</span></div>
@@ -215,6 +213,7 @@ export function PlayerSearch() {
                 </dl>
                 {!history.player.statistics.accuracy_complete && <p className="data-note">Accuracy covers {history.player.statistics.accuracy_matches} matches with detailed weapon data.</p>}
               </div>}
+              </div>
               <div className="data-panel">
                 <div className="panel-caption">
                   <span>POSTGAME CARNAGE REPORTS</span>

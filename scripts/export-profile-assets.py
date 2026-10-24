@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import struct
 import sys
@@ -20,6 +21,7 @@ p.add_argument('--output', type=Path, required=True)
 a = p.parse_args()
 sys.path.insert(0, str(a.game_root / 'tools'))
 from audit_rendering import Cache
+from profile_shader_assets import export_passes
 
 cache_path = a.game_root / 'assets/disc/maps/mainmenu.map'
 c = Cache(cache_path)
@@ -29,7 +31,7 @@ a.output.mkdir(parents=True, exist_ok=True)
 provenance = {'source_cache': str(cache_path.relative_to(a.game_root)), 'source_cache_sha256': hashlib.sha256(c.data).hexdigest(),
               'pose_source': str(pose_path.relative_to(a.game_root)), 'pose_sha256': hashlib.sha256(pose_path.read_bytes()).hexdigest(),
               'geometry_decoder': 'src/rendering/models/model.cpp', 'pose_decoder': 'src/rendering/models/model_pose.cpp',
-              'rendering': 'retail geometry and captured menu pose; website lighting is an adaptation', 'assets': {}}
+              'rendering': 'retail screen 47 character edit actors, captured held-weapon pose and original vertex/texture/combiner programs', 'assets': {}}
 
 def save_json(name, value):
     (a.output / name).write_text(json.dumps(value, separators=(',', ':')))
@@ -43,18 +45,22 @@ def resource(pointer, length):
     assert len(result) == length
     return result
 
-def texture(datum, page=0):
+def texture(datum, page=0, face=0):
     key = c.bitmap(datum)
     record = c.bitmaps[key]['records'][page]
     w, h, fmt = record['width'], record['height'], record['format']
     raw = resource(record['resource_pointers'][0], record['resource_sizes'][0])
+    if record['type'] == 2:
+        assert len(raw)%6 == 0
+        stride=len(raw)//6
+        raw=raw[face*stride:(face+1)*stride]
     if fmt in (14, 15, 16):
         assert not record['flags'] & 8, 'Compressed swizzle is not supported by the source decoder'
         fourcc = {14: b'DXT1', 15: b'DXT3', 16: b'DXT5'}[fmt]
         header = [124, 0x81007, h, w, len(raw), 0, 1] + [0]*11
         header += [32, 4, int.from_bytes(fourcc, 'little'), 0, 0, 0, 0, 0, 0x1000, 0, 0, 0, 0]
         return Image.open(io.BytesIO(b'DDS ' + struct.pack('<31I', *header) + raw)).convert('RGBA')
-    bpp = {0: 1, 1: 1, 2: 1, 3: 2, 6: 2, 8: 2, 9: 2, 10: 4, 11: 4}[fmt]
+    bpp = {17: 1, 0: 1, 1: 1, 2: 1, 3: 2, 6: 2, 8: 2, 9: 2, 10: 4, 11: 4, 22: 2, 23: 2}[fmt]
     if record['flags'] & 8:
         linear = bytearray(w*h*bpp)
         for y in range(h):
@@ -67,10 +73,18 @@ def texture(datum, page=0):
                         offset |= ((y >> n) & 1) << bit; bit += 1
                 linear[(y*w+x)*bpp:(y*w+x+1)*bpp] = raw[offset*bpp:(offset+1)*bpp]
         raw = bytes(linear)
-    if fmt in (10, 11): return Image.frombytes('RGBA', (w, h), raw[:w*h*4], 'raw', 'BGRX' if fmt == 10 else 'BGRA')
+    if fmt == 17:
+        palette=b''.join(struct.pack('<I',int(v,16))for v in re.findall(r'0x([0-9a-f]{8})u', (a.game_root/'src/platform/tu15_bump_palette.cpp').read_text()))
+        assert len(palette)==1024
+        rgba=bytes(channel for index in raw[:w*h] for channel in [palette[index*4+2],palette[index*4+1],palette[index*4],palette[index*4+3]])
+        return Image.frombytes('RGBA',(w,h),rgba)
+    if fmt in (10, 11): return Image.frombytes('RGB' if fmt==10 else 'RGBA', (w, h), raw[:w*h*4], 'raw', 'BGRX' if fmt == 10 else 'BGRA').convert('RGBA')
     if fmt in (0, 1, 2):
         return Image.frombytes('L', (w, h), raw[:w*h]).convert('RGBA')
     if fmt == 3: return Image.frombytes('LA', (w, h), raw[:w*h*2]).convert('RGBA')
+    if fmt in (22,23):
+        rgba=bytes(channel for i in range(w*h) for channel in [raw[i*2],raw[i*2+1],raw[i*2],raw[i*2+1]])
+        return Image.frombytes('RGBA',(w,h),rgba)
     if fmt == 9:
         rgba = bytes(channel for (v,) in struct.iter_unpack('<H', raw[:w*h*2])
                      for channel in [((v>>8)&15)*17, ((v>>4)&15)*17, (v&15)*17, ((v>>12)&15)*17])
@@ -84,13 +98,22 @@ def texture(datum, page=0):
     raise ValueError('Unsupported source bitmap format '+str(fmt))
 
 exported = {}
-def export_texture(datum, page=0):
+def export_texture(datum, page=0, face=0):
     if datum == 0xffffffff: return None
-    name = f'{datum:08x}-{page}.png'
+    record=c.bitmaps[c.bitmap(datum)]['records'][page]
+    suffix=f'-{face}' if record['type']==2 else ''
+    name = f'{datum:08x}-{page}{suffix}.png'
     if name not in exported:
-        texture(datum, page).save(a.output / name, optimize=True)
+        texture(datum, page, face).save(a.output / name, optimize=True)
         exported[name] = c.tags[datum]['name']
     return name
+
+def source_image(datum,page=0):
+    if datum==0xffffffff:return None
+    record=c.bitmaps[c.bitmap(datum)]['records'][page]
+    if record['type']==2:return {'type':'cube','images':[export_texture(datum,page,face)for face in range(6)]}
+    assert record['type']==0, 'Preview volume owner must be exported separately'
+    return {'type':'2d','images':[export_texture(datum,page)]}
 
 def matrix(words):
     m = np.eye(4)
@@ -102,9 +125,8 @@ def normal(word):
     values = [word & 2047, (word >> 11) & 2047, (word >> 22) & 1023]
     return np.array([(v if v < (1 << (bits-1)) else v-(1 << bits)) / ((1 << (bits-1))-1) for v,bits in zip(values,[11,11,10])])
 
-for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
-    capture = next(o for o in poses if int(o['definition'], 16) == definition)
-    _, obj = c.tag(definition, 'bipd')
+def export_model(capture, definition, origin, species, weapon=False):
+    _, obj = c.tag(definition, c.tags[definition]['group'])
     _, hlmt = c.tag(c.u32(obj+0x38), 'hlmt')
     mode_id = c.u32(hlmt+4)
     _, mode = c.tag(mode_id, 'mode')
@@ -114,11 +136,7 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
     nodes = c.block(mode+0x48, 0x60)
     inverse = [matrix([struct.unpack_from('<f', c.data, n+40)[0], *struct.unpack_from('<12f', c.data, n+44)]) for n in nodes]
     world = [matrix(words) for words in struct.iter_unpack('<13f', bytes.fromhex(capture['world_node_bank_hex']))]
-    root_words = struct.unpack('<16f', bytes.fromhex(capture['object_root_hex']))
-    forward, up = np.array(root_words[3:6]), np.array(root_words[6:9])
-    side = np.cross(up, forward)
-    root_inverse = np.linalg.inv(matrix([root_words[15], *forward, *side, *up, *root_words[:3]]))
-    skin = [root_inverse @ world[i] @ inv for i,inv in enumerate(inverse)]
+    skin = [world[i] @ inv for i,inv in enumerate(inverse)]
     materials = []
     for m in c.block(mode+0x60, 32):
         datum = c.u32(m+12)
@@ -127,7 +145,7 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
         runtime = bytes.fromhex(shader['runtime_properties'][0])
         diffuse = struct.unpack_from('<I', runtime, 4)[0]
         change = next((b['datum'] for b in bitmaps if any(s in c.tags.get(b['datum'],{}).get('name','') for s in ['_cc','change_color','color_change'])), 0xffffffff)
-        materials.append({'name': shader['name'], 'map': export_texture(diffuse), 'change': export_texture(change), 'emblem': shader['name'].endswith(('mc_emblem','elite_emblem'))})
+        materials.append({'name': shader['name'], 'body':not weapon, 'passes':export_passes(c,a.game_root,datum,species,source_image), 'emblem': shader['name'].endswith(('mc_emblem','elite_emblem'))})
     overrides = {}
     variant_name = c.u32(obj+0x30)
     for index, variant in enumerate(c.block(hlmt+0x50,0x38)):
@@ -144,12 +162,12 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
         permutation=overrides.get(c.u32(region),0)
         if permutation==255:continue
         assert permutation<len(permutations)
-        for offset in range(14, 3, -2):
+        for offset in ([4] if weapon else range(14, 3, -2)):
             section = struct.unpack_from('<h', c.data, permutations[permutation]+offset)[0]
             if section >= 0:
                 selected.add(section); break
     sections = c.block(mode+0x24, 0x5c)
-    positions, normals, uvs, groups = [], [], [], []
+    positions, normals, tangents, binormals, uvs, groups = [], [], [], [], [], []
     for section in sorted(selected):
         s = sections[section]
         classification, count, faces = c.u16(s), c.u16(s+4), c.u16(s+6)
@@ -172,6 +190,8 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
         nodemap = raw[next(v[0] for k,v in streams.items() if k[0] == 100):][:map_count] if map_count else None
         verts = np.array([[expand(v, axis) for axis,v in enumerate(struct.unpack_from('<3h',raw,pos+i*stride))] for i in range(count)])
         ns = [normal(struct.unpack_from('<I',raw,basis+i*12)[0]) for i in range(count)]
+        ts = [normal(struct.unpack_from('<I',raw,basis+i*12+4)[0]) for i in range(count)]
+        bs = [normal(struct.unpack_from('<I',raw,basis+i*12+8)[0]) for i in range(count)]
         texcoords = [[expand(v,axis+3) for axis,v in enumerate(struct.unpack_from('<2h',raw,uv+i*4))] for i in range(count)]
         idx = struct.unpack_from('<'+'H'*index_count, raw, indices)
         is_list = faces*3==index_count and all(len(set(idx[i:i+3]))==3 for i in range(0,min(index_count,30),3))
@@ -186,7 +206,7 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
                 if not is_list and j%2: tri[0],tri[1]=tri[1],tri[0]
                 for v in tri:
                     assert v<count
-                    value, n = np.append(verts[v],1), ns[v]
+                    value, n, t, b = np.append(verts[v],1), ns[v], ts[v], bs[v]
                     if classification == 3:
                         start=6+(2 if influences in (2,4) else 0)
                         local=list(raw[pos+v*stride+start:][:active])
@@ -194,18 +214,44 @@ for species, definition in [('spartan', 0xe23400bf), ('elite', 0xe3110154)]:
                         weights=[raw[pos+v*stride+start+influences+i]/255 for i in range(active)]
                         weights[0]=1-sum(weights[1:])
                     elif classification in (1,2):
-                        b=raw[pos+v*stride+6] if classification==2 else 0
-                        bones=[nodemap[b] if nodemap is not None else b];weights=[1]
+                        bone=raw[pos+v*stride+6] if classification==2 else 0
+                        bones=[nodemap[bone] if nodemap is not None else bone];weights=[1]
                     else: bones=[];weights=[]
                     if bones:
                         transform=sum((skin[b]*w for b,w in zip(bones,weights)))
-                        value=transform@value;n=transform[:3,:3]@n
-                    positions.extend(round(float(x),6) for x in [value[1],value[2],value[0]])
-                    normals.extend(round(float(x),6) for x in [n[1],n[2],n[0]])
+                        value=transform@value;n=transform[:3,:3]@n;t=transform[:3,:3]@t;b=transform[:3,:3]@b
+                    positions.extend(round(float(x),7) for x in value[:3]-origin)
+                    normals.extend(round(float(x),7) for x in n)
+                    tangents.extend(round(float(x),7) for x in t)
+                    binormals.extend(round(float(x),7) for x in b)
                     uvs.extend(round(float(x),6) for x in texcoords[v])
             groups.append({'start':first_vertex,'count':len(positions)//3-first_vertex,'material':material})
-    save_json(species+'.json',{'positions':positions,'normals':normals,'uvs':uvs,'groups':groups,'materials':materials})
-    provenance[species]={'model_tag':f'{mode_id:08x}','vertices':len(positions)//3,'triangles':len(positions)//9}
+    return {'positions':positions,'normals':normals,'tangents':tangents,'binormals':binormals,'uvs':uvs,'groups':groups,'materials':materials,'model_tag':f'{mode_id:08x}'}
+
+scenes=json.loads((a.game_root/'analysis/frontend/profile-regression/model-scene-assets.json').read_text())
+for species,definition,actor in [('spartan',0xe23400bf,'ui_player1c'),('elite',0xe3110154,'ui_player1d')]:
+    authored=next(o for o in scenes['objects'] if o['name']==actor)
+    capture=next(o for o in poses if o['position']==authored['position'] and int(o['definition'],16)==definition)
+    scene=next(o for o in scenes['scenes']if o['screen']==47 and actor in o['objects'])
+    origin=np.array(capture['position'])
+    model=export_model(capture,definition,origin,species)
+    held=capture['held_weapon']
+    weapon=export_model(held,int(held['definition'],16),origin,species,True)
+    offset=len(model['positions'])//3; material_offset=len(model['materials'])
+    for key in ['positions','normals','tangents','binormals','uvs']:model[key]+=weapon[key]
+    model['groups'] += [{**g,'start':g['start']+offset,'material':g['material']+material_offset}for g in weapon['groups']]
+    model['materials']+=weapon['materials']
+    model['origin']=list(origin)
+    model['camera']=scene['camera']
+    model['actor']=actor
+    model['weapon_definition']=held['definition']
+    save_json(species+'.json',model)
+    provenance[species]={'model_tag':model['model_tag'],'actor':actor,'screen':47,'held_weapon':held['definition'],'vertices':len(model['positions'])//3,'triangles':len(model['positions'])//9}
+for name in ['vertex_program.glsl','texture_program.glsl']:
+    shader=(a.game_root/'shaders'/name).read_text().replace('#include "render_view.glsl"','').replace('precise ','')
+    shader=shader.replace('material.vertexInstructions','vertexInstructions').replace('material.vertexConstants','vertexConstants').replace('material.vertexAttributes','vertexAttributes').replace('material.flags.w','instructionCount').replace('material.flags.z','shaderKind')
+    shader=shader.replace('vpInput[0]=vec4(position,1)','vpInput[0]=modelMatrix*vec4(position,1)').replace('vpInput[2]=vec4(normal,1);vpInput[3]=vec4(tangent,1);vpInput[4]=vec4(binormal,1)','vpInput[2]=vec4(mat3(modelMatrix)*normal,1);vpInput[3]=vec4(mat3(modelMatrix)*tangent,1);vpInput[4]=vec4(mat3(modelMatrix)*binormal,1)')
+    (a.output/name).write_text(shader)
 
 for family,datum,pages in [('foreground',0xe24e00d9,64),('background',0xe4a00280,32)]:
     folder=a.output/family;folder.mkdir(exist_ok=True)
@@ -216,6 +262,6 @@ save_json('palette.json',palette)
 live=json.loads((a.game_root/'analysis/frontend/customization/original-emblem-draw.json').read_text())
 save_json('emblem-program.json',list(struct.unpack('<60I',bytes.fromhex(live['pixel_program_hex']))))
 (a.output/'combiner.glsl').write_text((a.game_root/'shaders/combiner.glsl').read_text())
-provenance['assets']={str(f.relative_to(a.output)):{'sha256':hashlib.sha256(f.read_bytes()).hexdigest(),'bytes':f.stat().st_size} for f in a.output.rglob('*') if f.is_file()}
+provenance['assets']={str(f.relative_to(a.output)):{'sha256':hashlib.sha256(f.read_bytes()).hexdigest(),'bytes':f.stat().st_size} for f in a.output.rglob('*') if f.is_file() and f.name!='provenance.json'}
 save_json('provenance.json',provenance)
 print(json.dumps({'spartan':provenance['spartan'],'elite':provenance['elite'],'files':len(provenance['assets']),'bytes':sum(f['bytes'] for f in provenance['assets'].values())}))

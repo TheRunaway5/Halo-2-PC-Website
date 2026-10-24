@@ -1,11 +1,6 @@
 import * as THREE from "three";
 import type { ProfileAppearance } from "./profile-appearance";
 
-type ModelData = {
-  positions: number[]; normals: number[]; uvs: number[];
-  groups: { start: number; count: number; material: number }[];
-  materials: { name: string; map: string | null; change: string | null; emblem: boolean }[];
-};
 const json = async <T,>(path: string, signal: AbortSignal): Promise<T> => {
   const response = await fetch(`/profile/${path}`, { signal });
   if (!response.ok) throw new Error("Player artwork could not be loaded.");
@@ -50,79 +45,9 @@ export async function emblemImage(appearance: ProfileAppearance, signal: AbortSi
 }
 
 export async function mountPlayerModel(host: HTMLElement, appearance: ProfileAppearance, signal: AbortSignal) {
-  const data = await json<ModelData>(`${appearance.species}.json`, signal);
-  const loader = new THREE.TextureLoader();
-  const textures = new Map<string, THREE.Texture>();
-  const loadTexture = async (name: string | null) => {
-    if (!name) return null;
-    if (!textures.has(name)) {
-      const texture = await loader.loadAsync(`/profile/${name}`);
-      // The retained model UVs use the cache's top-left texture origin.
-      texture.flipY = false;
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.colorSpace = THREE.SRGBColorSpace;
-      textures.set(name, texture);
-    }
-    return textures.get(name)!;
-  };
-  const materials: THREE.MeshStandardMaterial[] = [];
-  let renderer: THREE.WebGLRenderer | undefined;
-  const geometry = new THREE.BufferGeometry();
-  let observer: ResizeObserver | undefined;
-  const dispose = () => {
-    observer?.disconnect(); geometry.dispose(); materials.forEach((m) => m.dispose());
-    textures.forEach((texture) => texture.dispose());
-    renderer?.dispose(); renderer?.forceContextLoss(); renderer?.domElement.remove();
-  };
-  try {
-    const names = [...new Set(data.materials.flatMap((m) => [m.map, m.change]).filter((name): name is string => !!name))];
-    await Promise.all(names.map(loadTexture));
-    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-    for (const definition of data.materials) {
-      const [map, change] = await Promise.all([loadTexture(definition.map), loadTexture(definition.change)]);
-      if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-      const material = new THREE.MeshStandardMaterial({ map, roughness: .63, metalness: .25, side: THREE.DoubleSide,
-        transparent: definition.emblem, opacity: definition.emblem ? 0 : 1 });
-      if (change) {
-        change.colorSpace = THREE.NoColorSpace;
-        material.onBeforeCompile = (shader) => {
-          shader.uniforms.changeMap = { value: change };
-          shader.uniforms.primary = { value: new THREE.Color(...appearance.colors[0] as [number, number, number]) };
-          shader.uniforms.secondary = { value: new THREE.Color(...appearance.colors[1] as [number, number, number]) };
-          shader.fragmentShader = "uniform sampler2D changeMap; uniform vec3 primary; uniform vec3 secondary;\n" + shader.fragmentShader;
-          shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", `#include <map_fragment>
-            vec4 dye=texture2D(changeMap,vMapUv);
-            diffuseColor.rgb *= mix(vec3(1.0),primary,dye.r);
-            diffuseColor.rgb *= mix(vec3(1.0),secondary,dye.g);`);
-        };
-      }
-      materials.push(material);
-    }
-    geometry.setAttribute("position", new THREE.Float32BufferAttribute(data.positions, 3));
-    geometry.setAttribute("normal", new THREE.Float32BufferAttribute(data.normals, 3));
-    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(data.uvs, 2));
-    data.groups.forEach((g) => geometry.addGroup(g.start, g.count, g.material));
-    geometry.computeBoundingBox();
-    const bounds = geometry.boundingBox!, center = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3());
-    geometry.translate(-center.x, -bounds.min.y, -center.z);
-    const scene = new THREE.Scene(), model = new THREE.Mesh(geometry, materials);
-    model.rotation.y = -.3;
-    scene.add(model, new THREE.HemisphereLight(0xdcefff, 0x253647, 2.5));
-    const key = new THREE.DirectionalLight(0xffedd8, 3.6); key.position.set(-2, 3, 4); scene.add(key);
-    const rim = new THREE.DirectionalLight(0x80caff, 2); rim.position.set(2, 2, -3); scene.add(rim);
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setClearColor(0, 0);
-    renderer.domElement.setAttribute("aria-label", `${appearance.species === "elite" ? "Elite" : "Spartan"} player model in saved armor colors`);
-    renderer.domElement.setAttribute("role", "img");
-    const camera = new THREE.PerspectiveCamera(32, 1, .01, 20);
-    camera.position.set(0, size.y*.55, size.y*2.2); camera.lookAt(0, size.y*.5, 0);
-    host.replaceChildren(renderer.domElement);
-    const render = () => { if (!signal.aborted) renderer!.render(scene, camera); };
-    observer = new ResizeObserver(() => {
-      const { width, height } = host.getBoundingClientRect();
-      renderer!.setSize(width, height); camera.aspect = width / Math.max(height, 1); camera.updateProjectionMatrix(); render();
-    });
-    observer.observe(host);
-    return { dispose, rotate: (delta: number) => { model.rotation.y += delta; render(); }, reset: () => { model.rotation.y = -.3; render(); } };
-  } catch (error) { dispose(); throw error; }
+  const [{ mountRetailModel }, emblem] = await Promise.all([
+    import("./profile-model"), emblemImage(appearance, signal),
+  ]);
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+  return mountRetailModel(host, appearance, signal, emblem);
 }
