@@ -8,11 +8,12 @@ import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
 import type { MatchPage, Player } from "@/lib/types";
+import { DISPLAY_NAME_LIMIT, displayNameQuery } from "@/lib/player-search";
 import { EmptyState, Loading, SectionTitle } from "./ui";
 export function PlayerSearch() {
   const params = useSearchParams(),
     id = params.get("id");
-  const [username, setUsername] = useState(params.get("q") ?? ""),
+  const [displayName, setDisplayName] = useState(params.get("q") ?? ""),
     [results, setResults] = useState<Player[] | null>(null),
     [history, setHistory] = useState<MatchPage | null>(null),
     [loading, setLoading] = useState(false),
@@ -52,11 +53,11 @@ export function PlayerSearch() {
   async function search(e: React.FormEvent) {
     e.preventDefault();
     searchAbort.current?.abort();
-    const value = username.trim().replace(/^@/, "").toLowerCase();
-    if (!/^[a-z0-9_.]{2,32}$/.test(value)) {
+    const value = displayNameQuery(displayName);
+    if (!value) {
       setLoading(false);
       setError(
-        "Enter an exact Discord username, using 2–32 letters, numbers, underscores or periods.",
+        "Enter a display name using 1–64 characters.",
       );
       return;
     }
@@ -112,17 +113,17 @@ export function PlayerSearch() {
             report.
           </p>
           <form className="search-form" onSubmit={search}>
-            <label htmlFor="username">DISCORD USERNAME</label>
+            <label htmlFor="display-name">DISPLAY NAME</label>
             <div>
               <Search size={21} />
               <input
-                id="username"
+                id="display-name"
                 autoComplete="off"
                 spellCheck={false}
-                placeholder="Enter an exact Discord username"
-                value={username}
-                maxLength={33}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter a player’s display name"
+                value={displayName}
+                maxLength={DISPLAY_NAME_LIMIT}
+                onChange={(e) => setDisplayName(e.target.value)}
                 aria-describedby="search-help"
                 required
               />
@@ -135,8 +136,8 @@ export function PlayerSearch() {
               </button>
             </div>
             <p id="search-help">
-              Use the player’s current verified Discord username. Names are
-              matched exactly, regardless of capitalization.
+              Search all or part of a player’s display name, regardless of
+              capitalization. Hover over the Steam icon to see their Steam handle.
             </p>
           </form>
           {loading ? (
@@ -147,10 +148,11 @@ export function PlayerSearch() {
             </EmptyState>
           ) : results?.length === 0 ? (
             <EmptyState title="No service record found.">
-              Check the player’s current verified Discord username and try again.
+              Check the player’s display name or try a shorter part of it.
             </EmptyState>
           ) : results ? (
             <div className="search-results">
+              {results.length === 50 && <p className="data-note">Showing up to 50 matches. Refine the display name to narrow your search.</p>}
               {results.map((p) => (
                 <div className="search-result" key={p.id}>
                   <Link className="player-emblem" href={playerLink(p.id)} aria-label={`View ${p.screen_name}'s service record`}>

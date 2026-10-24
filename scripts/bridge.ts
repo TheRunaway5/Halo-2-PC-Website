@@ -5,6 +5,8 @@ import { eosEnvironment } from "./eos-service.ts";
 import { publicSteam } from "./public-steam.ts";
 import { statusService } from "./status-service.ts";
 import { RequestBudgets } from "./request-budgets.ts";
+import { createPlayerSearch } from "./player-search.ts";
+import { displayNameQuery } from "../lib/player-search.ts";
 const port = Number(process.env.PORT ?? 8090);
 const master = process.env.MASTER_INTERNAL_URL ?? "http://directory:8080";
 const serviceStatus = statusService(master);
@@ -13,6 +15,7 @@ const db = new DatabaseSync(
   { readOnly: true },
 );
 db.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=3000;");
+const searchPlayers = createPlayerSearch(db);
 const eos=eosEnvironment(db);
 eos?.start();
 const origins = new Set(
@@ -76,6 +79,21 @@ const server = createServer(async (req, res) => {
     }
     if (!publicHistory.test(url.pathname) || url.search.length > 1000) {
       reply(404, { error: "Not found" });
+      return;
+    }
+    if (url.pathname === "/v1/history/players" && url.searchParams.has("display_name")) {
+      const name = displayNameQuery(url.searchParams.get("display_name")!);
+      if (!name || [...url.searchParams.keys()].some((key) => key !== "display_name") ||
+          url.searchParams.getAll("display_name").length !== 1) {
+        reply(400, { error: "Enter a display name using 1–64 characters" });
+        return;
+      }
+      const players = searchPlayers(name).map((player) => ({
+        ...player,
+        skill: currentSkill(db, String(player.id)),
+        ...publicSteam(db, String(player.id)),
+      }));
+      reply(200, { players });
       return;
     }
     // Fixed origin and allowlisted public GET paths only: no auth forwarding,

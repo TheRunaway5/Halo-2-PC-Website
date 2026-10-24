@@ -15,16 +15,20 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
   const matchId = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
   db.exec(`
     CREATE TABLE history_players(player TEXT,public_id TEXT);
-    CREATE TABLE player_profiles(player TEXT,steam_name TEXT);
+    CREATE TABLE player_profiles(player TEXT,steam_name TEXT,screen_name TEXT,discord_username TEXT);
     CREATE TABLE player_identities(player TEXT,provider TEXT,subject TEXT);
     CREATE TABLE playlist_skill(player TEXT,playlist TEXT,configuration TEXT,raw_rank INTEGER);
     CREATE TABLE match_results(id TEXT,playlist TEXT,ranked INTEGER);
     CREATE TABLE match_result_players(match TEXT,player TEXT);
     CREATE TABLE match_result_skill(match TEXT,player TEXT,raw_rank INTEGER,configuration TEXT);
     CREATE TABLE carnage_reports(match TEXT,public_id TEXT);
-    INSERT INTO history_players VALUES('private-player','${playerId}');
-    INSERT INTO player_profiles VALUES('private-player','Steam Pilot');
-    INSERT INTO player_identities VALUES('private-player','steam','76561198000000001');
+    INSERT INTO history_players VALUES('private-player','${playerId}'),
+      ('private-other','cccccccc-cccc-cccc-cccc-cccccccccccc');
+    INSERT INTO player_profiles VALUES('private-player','Steam Pilot','Halo Pilot','pilot'),
+      ('private-other','Other Steam Handle','Halo Pilot',''),
+      ('private-unpublished','Unpublished','Halo Pilot','');
+    INSERT INTO player_identities VALUES('private-player','steam','76561198000000001'),
+      ('private-other','steam','76561198000000002');
   `);
   db.close();
   const upstream = createServer((req, res) => {
@@ -117,6 +121,28 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
     );
     assert.equal(good.headers.get("access-control-allow-credentials"), null);
     assert.deepEqual((await good.json()).players, []);
+    const displaySearch = await fetch(base + "/v1/history/players?display_name=%20hAlO%20pI%20");
+    assert.equal(displaySearch.status, 200);
+    const found = await displaySearch.json();
+    assert.deepEqual(found.players.map((player: { id: string }) => player.id), [
+      playerId, "cccccccc-cccc-cccc-cccc-cccccccccccc",
+    ]);
+    assert.deepEqual(found.players.map((player: { steam_name: string }) => player.steam_name), [
+      "Steam Pilot", "Other Steam Handle",
+    ]);
+    assert.deepEqual(found.players.map((player: { steam_profile_url: string }) => player.steam_profile_url), [
+      "https://steamcommunity.com/profiles/76561198000000001",
+      "https://steamcommunity.com/profiles/76561198000000002",
+    ]);
+    assert.ok(!JSON.stringify(found).includes("private-"));
+    for (const query of [
+      "display_name=", "display_name=%20%20", "display_name=%00",
+      `display_name=${"a".repeat(65)}`,
+      "display_name=Halo&display_name=Pilot", "display_name=Halo&discord_username=pilot",
+      "display_name=Halo&unexpected=1",
+    ]) {
+      assert.equal((await fetch(base + "/v1/history/players?" + query)).status, 400, query);
+    }
     for (const path of [
       "/v1/history/players?discord_username=pilot",
       `/v1/history/players/${playerId}/profile`,

@@ -49,9 +49,9 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 export const api = {
   status: (signal?: AbortSignal) =>
     get<ServiceStatus>("/v1/website/status", signal),
-  search: (username: string, signal?: AbortSignal) =>
+  search: (displayName: string, signal?: AbortSignal) =>
     get<{ players: Player[] }>(
-      `/v1/history/players?discord_username=${encodeURIComponent(username)}`,
+      `/v1/history/players?display_name=${encodeURIComponent(displayName)}`,
       signal,
     ),
   matches: (id: string, before?: string, signal?: AbortSignal) =>

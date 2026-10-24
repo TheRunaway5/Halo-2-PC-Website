@@ -4,13 +4,265 @@ The website owns the TypeScript public bridge, publication scheduler, cache,
 Rust SDK worker, stat manifest and deployment glue. The existing Python master
 owns account authorization, Halo playlist/party/skill rules, immutable accepted
 results and full carnage history. The native client uses Rust for EOS Connect,
-Sessions and P2P; only the thin official C ABI adapter is C++.
+Sessions, P2P and the new room token/proof HTTP requests. Native adapters retain
+thread/message lifetime and existing game/UI ownership. Older account,
+Steam/Discord and matchmaking request paths still include C++ network I/O.
 
 ## Current status
 
-The installed native client builds and passes all twelve MCC frame cases. Both
-launcher names now open a single Play control and launch the supplied intro,
-title screen and menus. Installed startup and actual keyboard navigation through
+The latest qualified **uninstalled candidate** is
+`bin/engine-builds/8ef531cf15624b8daead5ed088dab67e/halo2_native` (SHA-256
+`92f8a321cf28eb3c24b629ec25a0f42212d26bbb72da948ffcf13e0c2d4a1b40`),
+retained with its resources at 316,334,099 bytes. All eight native tests passed
+(native report SHA-256 `fed94d36992484efeeaa4879cb6fea304dc85497b42a9aceb1b9ae47023bce6b`),
+as did eight launcher checks, twelve map/player frame cases, four menus and
+eighteen custom controller assets. The candidate report is
+`Halo-2-Decompiled/analysis/eos-sdk-main-thread-candidate-20261024/report.json`
+(SHA-256 `fd4abfe7bd169a584737cd7ee773b0e7a47271fc84ddbeb4d3a2093baae886c1`).
+Prepare-only packaging published no ROOT launcher or selector.
+
+The latest cached-profile run queued at **12:19:50 UTC on October 24**, using
+the same uninstalled 8ef/92f8 candidate and a private worker-stderr observer.
+EmkMage and Halo0001 entered Lockout Slayer at 6:23/6:21, then 5:16/5:14,
+with scores 0/0. One-second mouse holds visibly reduced both HUD magazine
+icons; the exact shot count is unverified. Later F3 captures were already
+terminal menus, so this run provides no scoreboard or PCR claim.
+
+This run also failed, around SDK time 234 seconds. Near 225 seconds, slot 0
+(the native host and SDK session owner) stopped advancing its 92,611 data sends;
+the SDK queue stayed at 65,479 bytes while reverse reception continued.
+Backpressure reached 4,766. The client last accepted sequence 5,572/tick 5,570
+and timed out at age 10,004 ms with zero rejected packets and 20,608 buffered
+bytes. The host reached tick 5,883 with 6,008 accepted inputs, removal reason 0
+and last-input age 397,660,793 ns. Actual failures now include both native-heavy
+role alignments; that observation does not identify a role-only cause.
+
+The SDK-free observer method initially failed loading; the diagnosed undefined
+`rust_eh_personality` was resolved by a private LOCAL/HIDDEN abort-only symbol.
+Version 4 passed all nine controls (report SHA-256
+`98990d82b4f5f26f96fb96b136e1ae160826c8e98fa722435a25ed86c4d29a3e`),
+then repeated all nine successfully inside the live owner before either client.
+Its bounded captures were 14,808/13,854 bytes, with zero omitted windows or
+collector errors; producer losses remain unmeasured. The scrubbed 248,298-byte
+diagnostic contains connection/session/closing messages without a proven SDK
+cause (SHA-256
+`8c69c100805d303dc722d5434485319673b4033e994400decfb801a048ffbf10`).
+
+Cleanup receipt `sdk-stderr-two-profile-cleanup-20261024.json` (SHA-256
+`5f87d271dc5bb33b5f58c332618e2944a6a94bd6c2b89bd94ab8c7fcebc5fed8`)
+verifies both parents exited zero and are absent, owner `f_jwixxw` was removed,
+both SDK readers reached EOF and joined, and all 41 source pins were unchanged.
+Private logs, captures, observer binaries and caches were removed; UI/retainer
+helpers were archived as nonexecutable 0444 sources. The frozen closed UI proof
+`ae7f2edd…` and final finished UI proof `12ccde60…` remain distinct.
+The full-game-ELF worker versus standalone component context is under
+source-only audit; it is not an established cause or fix. Completed-match,
+result/publication, WAN, microphone and full-migration acceptance remain false.
+
+An earlier actual cached EmkMage/Halo0001 run queued at **09:54:36 UTC on October 24**.
+Both entered Lockout Slayer at 7:06/7:04, score 0/0; real F3 scoreboards later
+showed both names tied at zero. The run still failed after about 206 seconds of
+SDK traffic: the client timed out after 10,021 ms without an accepted snapshot,
+and the host SDK outgoing queue remained at 65,530 bytes/107 packets while
+reverse reception continued. Process-main ownership did not resolve this live
+stall; longer duration alone does not prove improvement. Vendor SDK messages
+were unobserved because child stderr was null, not because SDK errors were
+proved absent. No PCR, completed match, accepted result or publication/readback
+was obtained.
+
+The bounded diagnostic is
+`two-profile-sdk-main-thread-diagnostics-20261024.json` (223,984 bytes; SHA-256
+`c0d9cbd3c4ecdcc12a53db5be9126d60bb864a2602dd29df1f5d87f731d633e3`).
+The finalized UI report has SHA-256
+`e3866c8f90898c71daa7849c454edfe0430f88973d54385fabfc5d0eff751d83`.
+Cleanup receipt `sdk-main-thread-candidate-live-cleanup-20261024.json` (SHA-256
+`29dc9438e6cd40ba901d5fa961daacb852d26174c04095602111ad2a535b6ab6`)
+verifies both clients exited zero and are absent, build/UI owners were removed,
+and raw logs, captures and build products were removed. Three one-off helpers
+were retired as nonexecutable 0444 sources; the qualified reference candidate is
+intentionally retained. Foreign ROOT selections were preserved.
+
+Two private 240-second Rust native-size component controls have completed. The
+debug/traced run failed its progress criterion: 160,800 offered forward datagrams
+accounted exactly for 114 refusals, 26,852 Rust expiries, 472 stop cancellations
+and 133,362 received datagrams; only 737/7,200 complete groups arrived. It did
+not reproduce a stationary full SDK queue. Report SHA-256:
+`204aba9d79242b573c1ac0642189c4f220076768275655a6514c633b4e6726a1`.
+
+The Release/untraced control received all 160,800 forward datagrams/7,200 groups
+and all 9,600 reverse inputs with zero expiry, refusal or SDK backpressure.
+Host mean loop/pump times were 2.199/0.142 ms, but observed tick-gap maxima of
+554/575 ms prevent a tight-bound claim from the means. It also reproduced no
+stationary full SDK stall. Report SHA-256:
+`486f12a865e38959ca297b6575da6eeccf4ef72bbf3a94986c8a3139e67f96ce`.
+This combined execution-context comparison does not attribute the difference to
+debug optimization or tracing separately and does not fix or accept the failed
+8ef/92f8 native match. Both controls preserved all 41 production source pins,
+completed SDK/remote shutdown and removed owned outputs. Cleanup receipts
+`eos-native-size-main-thread-probe-cleanup-20261024.json` (SHA-256
+`45cde9ac9ad259117a8e9e792145fc167b55b50446321573f323368daf9b26c1`)
+and `eos-native-size-context-control-cleanup-20261024.json` (SHA-256
+`639d4e137d53f28fb51418c1a23c787c41006da1d554a77beb536e195c080679`)
+verify owner removal and no retained raw logs, SDK/build binaries or caches.
+
+The first authenticated-profile prelude attempt (`777b3dd9…`) stopped at
+library compilation: its 53-field JSON macro exceeded the recursion limit.
+Report SHA-256 `0ab2429049086bb28d1a6b1d2c9e9dd1fcf082c154b0b270721f42aaefffd114`
+remains failed; no SDK worker, credential-config read or network started. The
+private reporting repair split the unchanged 38 baseline and 15 profile fields
+without changing production code, policy or lifecycle.
+
+The corrected prelude passed its 240-second component criterion. The production
+identity API logged in, copied the proof and released its profile platform.
+Official proof verification then preceded a fresh same-subject match grant,
+retaining the same PUID and live SDK child.
+The acknowledged parent proxy-handle ledger went 0→1→0 with no pending
+retirements; these are not independent inside-SDK counts. No stationary SDK
+stall appeared, but forward delivery was 160,609/160,800 datagrams and
+7,189/7,200 complete groups: 153 refusals and 38 Rust expiries remain explicit.
+All 9,600 reverse inputs arrived; the maximum complete-group gap was 946 ms.
+This is neither zero-loss nor native-match acceptance. Report SHA-256:
+`c515bece835ae97afd5142ec6873ab629789a0aac21584ad3374012f7c840639`.
+Cleanup `eos-native-size-profile-prelude-cleanup-20261024.json` (SHA-256
+`8a2135efc4d69d73c925ec07ba335f2485d6be37d5f6f9cbdc2de82a01a8ab4a`)
+verifies the `oq031e8s` owner and private outputs removed; helper `3f58a7bf…` is
+retained only as archived source. No idle duration was assumed.
+
+The 240-second direction control also passed its component criterion. With
+heavy traffic on slot 1 and light traffic on slot 0, while SDK session owner/P2P
+initiator stayed slot 0, all 160,800 heavy datagrams/7,200 groups and all 9,600
+reverse inputs arrived. Refusals, expiries and SDK backpressure were zero.
+Maximum complete-group gaps were 89 ms at the heavy receiver and 102 ms at the
+reverse receiver; slot 0/1 mean loops were 2.179/2.213 ms and SDK outgoing
+high-water marks were 384/893 bytes. Both real profile/proof preludes retained
+the same PUID/child and acknowledged handle lifecycle. No stationary full SDK
+stall appeared, so the conditional 1,404-byte control did not run. Report
+SHA-256 `c4eb3ab088dfa2e867f7cb16b79916ca3993c6bb09d3f4a73700bca75d0e411f`;
+cleanup SHA-256
+`b8848c63f3635be132e21c24e46d4f019a1bd28adf020fa56b17853b131c024d`
+confirms owner `itlrso2u` removed, remote cache cleaned and helper `2871af26…`
+retired as 0444 source. This synthetic role-alignment result does not establish
+a role-only cause or native gameplay acceptance.
+
+The source-derived QoS control completed its 240-second component criterion.
+The unchanged native QoS owner ran beside heavy slot 1/light slot 0 traffic:
+all 160,800 heavy datagrams/7,200 groups and 9,600 reverse inputs arrived, with
+zero refusals, Rust expiries or SDK backpressure. Each peer admitted five
+64-packet upload trains (one setup, four selected) without QoS refusals; both
+actual QoS rows were measured with zero reported loss. The declared context
+reset preceded load by 2 ms. Receiver maximum complete-group gaps were 79/51 ms,
+slot 0/1 mean loops 2.165/2.192 ms, and SDK high-water marks 3,520/1,082 bytes.
+No stationary full SDK stall appeared; the conditional 1,404-byte control did
+not run. This source-QoS workload is component evidence, not native acceptance.
+Report SHA-256:
+`032277ef40de51b0f6202df4262f5ea39acc4ecc05f146f38dbfbb696f1c414b`.
+
+Both real profile/proof preludes, same-PUID/live-child acknowledged ledgers and
+all 41 production source pins remained intact. Cleanup receipt
+`eos-native-size-qos-control-cleanup-20261024.json` (SHA-256
+`6b26e6b3d3b5e4482c6c1cca25384c6f3483c54ee9d7ab1b4d78d904c0fb2b46`)
+confirms owner `kpd1udni` and private outputs removed, remote cache cleaned, and
+helper `10210e92…` retained only as a nonexecutable 0444 source.
+
+The actual 8ef/92f8 native match remains failed. Completed-match, PCR,
+ranked-result, publication, WAN, microphone, full-migration and ROOT-delivery
+acceptance remain false. Historical V6–V10 evidence and the immutable deployed
+backend candidate remain unchanged.
+
+The earlier qualified **uninstalled candidate** is
+`bin/engine-builds/cfdc426a2ef441c1b252ee4c35185290/halo2_native` (SHA-256
+`8e5076550e4046cf4d47486fb4984bc1c69df5dd18379fa1cecf4b62f5bee044`),
+retained with its resources at 315,360,388 bytes. Its five native checks, eight
+launcher checks, twelve map/player frame cases, four menus and eighteen custom
+controller assets passed. The first scoped native run remains failed at 3/5:
+receiver and cold-receiver assertions incorrectly assumed a pristine tick zero.
+The fixture correction records the actual owner/tick/full body hash and still
+requires identity rejection without mutation or acknowledgment; the fresh run
+then passed 5/5. Offline Rust qualification passed 103 protocol and 38 bridge
+tests, with two existing ignored tests and both strict Clippy checks. The
+packaging policy passed 29 unit/fault controls; the narrowed actual tool guard
+passed six controls. These are component checks, not live-match acceptance.
+
+The actual cached EmkMage (slot 0) and Halo0001 (slot 1) run queued Casual Lab
+Slayer at **06:50:43 UTC on October 24**. Both joined visible Lockout Slayer
+worlds at 7:57/7:54, score 0/0, then slot 0 returned to party and slot 1 showed
+“Match connection failed.” Diagnostics recorded the SDK outgoing queue
+stationary at 65,535 bytes/102 packets for about twelve seconds while pumping
+continued; the complete cause remains unresolved. No PCR, shooting, accepted
+result or result readback was verified. Both clients exited zero; the UI/build
+owners, captures, private logs and GPU caches were removed. The candidate was
+never globally selected. The unrelated shared selection, observed as `1775b14a…`
+at review, was preserved. Acceptance and cleanup are recorded in
+`Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/two-profile-candidate-v2-acceptance-cleanup-20261024.json`
+(SHA-256 `cf9c83f6c083772149a49b489155e2a3619e7b0a691d94730f72d600d4038e51`).
+Full migration, WAN, microphone, ranked-result and completed-result acceptance
+remain false.
+
+A second run of the same cached profiles and unchanged cfdc candidate queued at
+**07:53:07 UTC on October 24**. Both entered Lockout Slayer at 7:12/7:10,
+score 0/0, before returning to party/player-left screens. Fresh poll samples
+showed the host SDK queue stationary at 65,488 bytes/104 packets while reverse
+reception continued. This does not establish the cause or prove a thread-related
+stall. The numeric diagnostics and final UI reports are
+`Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/two-profile-sdk-observation-diagnostics-20261024.json`
+(SHA-256 `4023f73c4b799e40d7d0b6db5c0a03a18b4d4d648fc99200bf57497c4d203114`)
+and `Halo-2-Decompiled/analysis/eos-native-preparation-candidate-20261024-v2/two-profile-sdk-observation.json`
+(SHA-256 `8c102b99e21059f995c90f95c1ced72c0c08c71dd7b6dc123b9ff4c7c2356b04`).
+Both clients exited zero; their owner, raw captures, private logs and GPU caches
+were removed (`sdk-observation-completed-helper-cleanup-20261024.json`, SHA-256
+`d4e4220bd4c71458ee836f5237f7ebe874641e7ac670796a3134c56a984c515a`).
+No completed match, PCR or result readback was obtained.
+
+The separate serialized-caller SDK A/B comparison passed both ninety-second
+cases: each received all 45,000 host and 2,700 input datagrams without SDK
+backpressure or Rust expiry. The observed one-versus-three caller-role shapes
+reproduced no stall. This generated workload does not prove thread causality,
+process-main compliance or native gameplay acceptance; its report is
+`eos-sdk-thread-ownership-ab-20261024.json` (SHA-256
+`cd69b79031de084d3f0293b2987796727dfa038a8c770de85ce8e5779c4b22f2`).
+
+Rust now routes the SDK through an explicitly registered self-executed worker
+whose true process main owns SDK calls and lifetimes. The bounded IPC startup
+repair consumes at most 4,096 preamble bytes and one versioned 22-byte marker;
+subsequent frames remain strict. Fresh offline and SDK builds each passed 156
+unique Rust tests (103 protocol, 53 bridge), with two existing ignored tests and
+strict Clippy for both crates. Four private subprocess controls passed. Actual
+SDK observation recorded six creates, six releases, at most two live platforms,
+one shutdown, all on child process main, followed by child reap. This qualifies
+the platform lifecycle, not authentication or gameplay. Evidence:
+`sdk-main-thread-validation-20261024.json` (SHA-256
+`62cac10d11f4e3200cc77d926451fb184d6e5baa5d42d79bc2e019a47a402d5c`);
+its owned source, binaries and SDK scratch were removed.
+
+The separate ninety-second generated SDK workload received all 45,000 host
+and 2,700 input datagrams on the direct route. Forced relay did not receive 137
+host and two input datagrams. Both component runs avoided a ten-second complete
+group stall; neither is native snapshot, completed-match or zero-loss relay
+acceptance. See `Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/eos-sustained-route-conclusions-cleanup-20261024.json` (SHA-256
+`ce99e5429b20febf6fc9ee371807e8f2a3142b4fe034f22cb1af3418554160ce`).
+
+Earlier, V10 installed the diagnostic runtime
+`bin/engine-builds/b77edf39fc734632b695adcc4d11e182/halo2_native` (SHA-256
+`ae29ac68910496f7962ff6c909630e18ebc9c0f7ef1216e10d8880559befea22`).
+Eight launcher/shadow checks, twelve MCC submitted-frame cases, four rendered
+menus and eighteen project controller assets passed. Full delivery remains
+failed: the positive common-cut case failed both before and after packaging,
+with one unchanged full-suite repeat passing between those failures. A separate
+read-only admission permitted a bounded diagnostic run, not full acceptance.
+
+Both real cached profiles entered actual matchmaking twice. The second run
+showed both Lockout Slayer worlds at 7:51 and score 0 before disconnecting;
+neither run reached postgame, a drawn scoreboard or a carnage report. Host
+outgoing progress stalled with queue-full observations and increasing expiry;
+the complete cause remains unresolved. No accepted result or EOS result
+readback was verified, and no public player/report queries were made. Both
+clients and their owners closed cleanly; raw captures, private logs and GPU
+caches were removed. The acceptance and cleanup receipts are
+`Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/two-profile-acceptance-v10.json`
+and `v10-live-owner-cleanup.json`. Unrelated work selected runtime
+`8681e66c5d024bf98a96539bb2f38890` after the two b77 clients launched; those shared
+selectors and launchers were preserved. Earlier V6–V9 evidence remains
+historical. The prior startup and actual keyboard navigation through
 the local profile picker to ONLINE passed. The first real Steam account linked
 to EOS; the trusted publisher read back all 27 expected profile/stat fields and
 the public website profile API reports `statistics_source: "eos"` with its
@@ -93,10 +345,10 @@ retained unchanged. A server-created join timestamp is immutable. Pre-existing
 accounts without a timestamp remain unknown. Current customization and the
 historical 16-byte PCR appearance are separate records.
 
-## Account-authenticated room transport (v14, local only)
+## Account-authenticated room transport (v14 backend and client delivered)
 
-The [v14 contract](account-transport-v14.json) and exact
-[master deployment patch](account-transport-v14.patch) add room-bearer EOS
+The [v14 contract](account-transport-v14.json) and
+[canonical implementation patch](account-transport-v14.patch) describe room-bearer EOS
 Connect authentication. The existing Python master remains the canonical owner
 of room authorization; its existing Rust SDK worker verifies the EOS proof.
 No second master source tree or new issuer/key/provider mapping is introduced.
@@ -114,9 +366,107 @@ a separate20-second creation/write/read budget. Cancelling a queued caller
 preserves the active worker, while cancelling its owner retires that stream
 before another proof can use it.
 
-These changes are local and have not been deployed. The contract records source
-hashes, authorization/retirement guards and validation limits. Production rollout
-and a playable two-account join remain separate acceptance steps.
+The scoped backend was deployed on October 23, 2026 as
+`halo2-master-eos:20261023T173530Z-account-v14-candidate`. Its
+[deployed-baseline patch](account-transport-v14-deployed.patch) changes only three
+modules and preserves the other 33 deployed source files, including the existing
+social and departure behavior. The actual image passed 44 applicable focused and
+35 social checks, including all 17 new authentication/queue checks. Two current
+canonical tests require unrelated behavior absent from the unchanged deployed
+baseline; both exceptions are recorded separately rather than counted as passing.
+
+The directory-only rollout preserved its four private files, created a consistent
+542,527-byte SQLite/private-file backup, and verified all 36 source hashes,
+configuration, internal/public health and unchanged other containers. Public
+HTTPS also returned the backend's JSON 404 guards for unknown-room token/proof
+requests. See the [sanitized rollout receipt](account-transport-v14-rollout.json)
+and [rollout procedure](account-transport-v14-deployed-rollout.md).
+
+The earlier 23-case native cohort passed, but its promotion was interrupted and
+its unselected copied candidate was not an installation. V5 then passed twelve
+MCC frame cases and four menus before its final strict resource-identity guard
+refused publication; its candidate and owned build were removed. V6 subsequently
+completed qualification and promotion. Its frozen source passed 97 Rust protocol
+and 33 bridge tests plus strict all-target Clippy; two existing service-dependent
+bridge tests remain ignored. Six focused native checks passed both before and
+after installation: the five authentication/transport cases and the frontend
+owner-readmission regression. Eight packaging checks, twelve MCC submitted-frame
+cases and four rendered menu screens passed. At that delivery, the current-tool
+verifier accepted the same installed runtime, 114-file inventory and eighteen
+project prompt assets.
+The [portable receipt](account-transport-v14-rollout.json) pins the delivery and
+verification reports separately from the deployed backend evidence. No live
+completed-match acceptance is inferred from installation or the subsequent
+successful initial native join.
+
+The v7 cancellation receipt records exit code 143, no publication and removal of
+the owned build. An actual SDK burst regression reproduced queue-full send
+failures despite successful Session callbacks; this component finding does not
+identify the initial v6 live disconnect cause. V8's ordinary disconnect control
+passed in 119.03 seconds, while its positive native common-cut process exited
+zero with all expected markers before the wrapper's room-lifetime postflight
+failed. The V9 fixture retains the original actual room objects before the
+subprocess and preserves all native and zero-result checks. No V8 publication or
+installation occurred. V9 then failed both MCC checks on a native memory
+conflict. V10 applies the reviewed three-file fade-data correction pinned by
+`Halo-2-Decompiled/analysis/eos-live-matchmaking-failure-20261023/v10-refresh-manifest.json`, SHA-256
+`696cb1d9bdfb8ec6019ddbdf12f98866a71677ceb86245cc96846f15b5057573`.
+Its 138 Rust tests and both strict Clippy checks passed, with two tests ignored.
+The first native run passed 10/11; positive common-cut reported a serviced peer
+expiry after 180.61 seconds, with actual cause unproven. An unchanged full
+eleven-case repeat passed, including positive common-cut in 205.01 seconds and
+ordinary disconnect in 87.28 seconds. The original failure and intermittent
+flag remain recorded. Packaging subsequently passed its eight launcher/shadow,
+twelve MCC frame and four menu checks. The post-native run passed the other ten
+cases and failed positive common-cut after 242.02 seconds, leaving the full
+delivery report false. The separate diagnostic admission and two failed live
+attempts are recorded above; the unchanged repeat does not establish complete
+migration readiness.
+
+The separate four-fragment SDK pacing probe failed its strict check with
+948/948 datagrams received in one direction and 940/948 in the other. This is
+not accepted as zero-loss or native-match evidence. Native-match completion,
+accepted results, WAN and microphone acceptance remain open. V10 remains a historical installed diagnostic candidate, not a fully accepted
+delivery. The unrelated 8681 selection recorded during those tests was preserved;
+the newer uninstalled candidate and observed foreign selection are described above.
+
+The new room token/proof I/O belongs to a Rust client using the safe curl binding
+and existing system libcurl. It validates fixed endpoints and headers, verifies
+TLS, refuses redirects/proxies, bounds reply bytes, accepts only typed JSON
+objects, applies request deadlines and cooperatively cancels pending I/O.
+The native worker calls it outside SDK/Session locks. Actual loopback controls
+cover proof POST/acknowledgment, redirect/header isolation, malformed/oversized
+responses and cancellation; a dedicated regression rejects root-array replies.
+This scope does not port every older sensitive HTTP path to Rust.
+
+Rust also derives the bounded Session bucket from playlist/revision and starts
+the Session admission clock after the first account acknowledgment and local SDK
+identity. Actual production-derived two-peer SDK checks received 202 intact
+1,404-byte packets for the capacity-four party tuple and 203 for Casual, through
+forced relay with successful account proofs and clean SDK shutdown. These are
+component fixtures; they do not establish a native match, four-player gameplay,
+two consumer networks or microphones.
+
+Separately, 28 current local population/profile/carnage/Steam contracts and seven
+prompt/artwork tests passed using real Rust security policy in disposable
+storage, with zero external network attempts. Their explicit current canonical
+security adapter is not part of the deployed 36-file v14 overlay. At that snapshot,
+thirteen canonical master modules differed from the historical 34-file accepted-result SDK
+baseline; these local checks neither redeploy that drift nor repeat a production
+result publication. The sanitized receipt records the separate source and test
+scopes. Steamworks remains deferred at the user's direction.
+
+A completed two-account match and result publication, WAN/microphone gameplay,
+and complete host-migration readiness remain separate acceptance work. The v6
+live test queued at 23:34:48 UTC and failed completion by 23:38:13 UTC. The host
+summary recorded 1,822 frames/2,229 ticks and the client 857 frames/698 ticks;
+each recorded one connected remote peer and a peak of two players. These are
+observations before failure, not sustained-network or result-publication proof.
+The portable receipt pins the failed live-test companion separately from the
+successful delivery checks. Existing
+prospective role owners and Rust scheduling are component-qualified; the six
+remaining native aggregate/production-caller gaps remain open and migration
+defaults remain disabled.
 
 ## Credentials and permissions
 
@@ -379,12 +729,14 @@ leadership, capacity, blocks, consent and match rules still apply.
 
 Eighteen applicable HTTP regressions and the actual image's schema/routes,
 health and deployed source hashes passed. The separate party roster appearance
-extension is excluded from this production overlay. The installed native
-replacement passed four focused identity/party tests, eight launcher checks,
-twelve MCC submitted-frame cases and four frontend screens. Both launcher names
-select that build; all eighteen installed Xbox/PlayStation prompt files match
-the project's authenticated banks. The real two-account join check remains
-pending at the user's request. See
+extension is excluded from this production overlay. That earlier native delivery
+passed four focused identity/party tests, eight launcher checks, twelve MCC
+submitted-frame cases and four frontend screens. At that delivery, all eighteen
+installed Xbox/PlayStation prompt files matched the project's authenticated banks.
+Before v6, gameplay and Dire Valley frontend selectors had separate owners;
+those historical checks do not qualify the newer Rust HTTP replacement. The
+subsequent real two-account join failure and verified v6 replacement are described
+above. See
 [the source overlay](steam-social-and-remembered-login.patch) and
 [the rollout receipt](steam-social-rollout.json).
 
@@ -406,11 +758,14 @@ its disposable storage. The master source can be the exact deployed overlay;
 the matching master test sources supply explicit local authentication and PCR
 fixtures. Only an isolated generated device-test EOS account receives writes.
 
-This qualification passed casual and ranked results in one cumulative ledger,
+The earlier qualification passed casual and ranked results in one cumulative ledger,
 with six guest seats excluded, exact career/accuracy increments, original Halo
 skill, separate playlist counters, actual ranked leaderboard read-back, duplicate
-commits, lost publication replies and publisher restart. All 34 deployed master
-files and both website publisher sources matched the qualified source hashes.
+commits, lost publication replies and publisher restart. All 34 then-deployed
+master files and both website publisher sources matched the qualified hashes.
+The publisher/fixture hashes still match, but current canonical master security
+changes have not received a fresh live SDK result run. The later scoped v14
+deployment has its own exact 36-file manifest and 79 applicable checks.
 Node type checking and all 16 website tests passed. The fixtures are declared PCR
 inputs; this does not establish a played native match, relay gameplay, physical
 microphone playback or complete-world host migration. See

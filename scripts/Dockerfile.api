@@ -1,6 +1,7 @@
 FROM node:26.12.0-alpine
 WORKDIR /app
-COPY scripts/bridge.ts scripts/eos-service.ts scripts/public-ranks.ts scripts/public-steam.ts scripts/status-service.ts scripts/request-budgets.ts ./scripts/
+COPY scripts/bridge.ts scripts/eos-service.ts scripts/public-ranks.ts scripts/public-steam.ts scripts/status-service.ts scripts/request-budgets.ts scripts/player-search.ts ./scripts/
+COPY lib/player-search.ts ./lib/
 USER 10001:10001
 EXPOSE 8090
 CMD ["node", "scripts/bridge.ts"]
