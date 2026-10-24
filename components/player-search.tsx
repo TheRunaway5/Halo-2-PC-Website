@@ -4,11 +4,13 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { RankBadge } from "./rank-badge";
 import { SteamProfileLink } from "./steam-profile-link";
+import { PlayerAppearance } from "./player-appearance";
 import { VistaIntro, VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, date, label, playerLink, ratio, reportLink } from "@/lib/api";
 import type { MatchPage, Player } from "@/lib/types";
 import { DISPLAY_NAME_LIMIT, displayNameQuery } from "@/lib/player-search";
+import { joinedDate } from "@/lib/profile-appearance";
 import { EmptyState, Loading, SectionTitle } from "./ui";
 export function PlayerSearch() {
   const params = useSearchParams(),
@@ -194,7 +196,7 @@ export function PlayerSearch() {
                   <p>
                     {history.player.service_tag ? `[${history.player.service_tag}] · ` : ""}
                     {history.player.appearance ? (history.player.appearance.species === "elite" ? "Elite" : "Spartan") : "Appearance not recorded"}
-                    {" · "}{history.player.joined_at ? `Joined ${new Intl.DateTimeFormat("en-US",{dateStyle:"medium",timeZone:"UTC"}).format(new Date(history.player.joined_at*1000))}` : "Join date not recorded"}
+                    {" · "}{joinedDate(history.player.joined_at) ? `Joined ${joinedDate(history.player.joined_at)}` : "Join date not recorded"}
                   </p>
                 </div>
                 <RankBadge skill={history.player.skill} large />
@@ -202,6 +204,7 @@ export function PlayerSearch() {
                   Find another player <Search size={15} />
                 </Link>
               </VistaIntro>
+              <PlayerAppearance player={history.player} />
               {history.player.statistics && <div className="profile-details data-panel">
                 <div className="panel-caption"><span>CAREER STATISTICS</span><span className="muted">{history.player.statistics_source === "eos" ? "EOS" : "RECORDED RESULTS"}</span></div>
                 <dl>

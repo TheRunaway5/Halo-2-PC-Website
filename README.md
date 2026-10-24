@@ -43,6 +43,10 @@ Public bridge endpoints:
 
 Public skill emblems use `min(raw_rank, 49) + 1`, matching the master and original 50-frame UI. The actual authored SVG for each level is copied unchanged. Comet is level 49 and Halo ring is level 50; lunar/solar art covers levels 44–48. Leaderboard emblems show the selected playlist's current skill. Report emblems use the retained postmatch skill snapshot. Missing skill is shown as unknown; unranked hidden skill, private IDs and XP are never exposed.
 
+Player profiles also show the saved player emblem and a rotatable Spartan or Elite model, driven by the authenticated nine-byte appearance record. `public/profile/provenance.json` pins the retail menu cache, captured menu pose, decoded mesh and bitmap assets. The model retains the original geometry and pose with website lighting; this browser preview does not claim retail shader or framebuffer parity. The player emblem uses the original 60-word register-combiner program and unchanged combiner arithmetic, the four saved palette colors and the original foreground/background bitmap pages. The renderer loads only on a profile, renders on view changes, and releases its GPU resources on navigation. Missing appearance remains explicit. A recorded `joined_at` is shown as a UTC calendar date; older accounts with no stored registration timestamp remain unknown rather than being assigned a migration or first-match date.
+
+To regenerate the requested profile assets from the owned game checkout, run `scripts/export-profile-assets.py` through that checkout's `tools/run_test.py`, passing `--game-root` and the absolute website `public/profile` directory as `--output`. No game caches or account databases are included in the static export.
+
 The game master now owns `/v1/online/status` and derives the compatibility health counter from the same activity. The old website source-patching helper and queue-only tests were removed. Public population contains aggregate counts only; neither account IDs nor online rosters are exposed. Deployment and rollback evidence belongs in ignored `.local/deploy/`; local implementation does not establish production rollout.
 
 ## Assets and content
