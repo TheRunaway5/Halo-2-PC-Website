@@ -20,7 +20,8 @@ ENV LD_LIBRARY_PATH=/usr/local/lib
 USER 10001:10001
 FROM runtime AS website-api
 WORKDIR /app
-COPY scripts/bridge.ts scripts/eos-service.ts scripts/public-ranks.ts scripts/public-steam.ts scripts/status-service.ts ./scripts/
+COPY scripts/bridge.ts scripts/eos-service.ts scripts/public-ranks.ts scripts/public-steam.ts scripts/status-service.ts scripts/request-budgets.ts scripts/player-search.ts ./scripts/
+COPY lib/player-search.ts ./lib/
 ENV H2_EOS_WORKER=/usr/local/bin/halo2-eos-worker
 EXPOSE 8090
 CMD ["node", "scripts/bridge.ts"]
