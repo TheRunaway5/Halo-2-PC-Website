@@ -45,9 +45,7 @@ export async function emblemImage(appearance: ProfileAppearance, signal: AbortSi
 }
 
 export async function mountPlayerModel(host: HTMLElement, appearance: ProfileAppearance, signal: AbortSignal) {
-  const [{ mountRetailModel }, emblem] = await Promise.all([
-    import("./profile-model"), emblemImage(appearance, signal),
-  ]);
+  const { mountRetailModel } = await import("./profile-model");
   if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-  return mountRetailModel(host, appearance, signal, emblem);
+  return mountRetailModel(host, appearance, signal);
 }

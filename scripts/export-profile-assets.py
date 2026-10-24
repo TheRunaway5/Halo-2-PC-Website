@@ -23,6 +23,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(a.game_root / 'tools'))
 from audit_rendering import Cache
 from profile_shader_assets import export_passes
+from export_body_emblems import export_body_emblems
 
 cache_path = a.game_root / 'assets/disc/maps/mainmenu.map'
 c = Cache(cache_path)
@@ -260,6 +261,7 @@ for name in ['vertex_program.glsl','texture_program.glsl']:
 for family,datum,pages in [('foreground',0xe24e00d9,64),('background',0xe4a00280,32)]:
     folder=a.output/family;folder.mkdir(exist_ok=True)
     for page in range(pages): texture(datum,page).save(folder/f'{page}.png', optimize=True)
+export_body_emblems(c,resource,a.output,a.game_root)
 _,matg=c.tag(next(t['datum'] for t in c.tags.values() if t['group']=='matg'),'matg')
 palette=[list(struct.unpack_from('<3f',c.data,at)) for at in c.block(matg+0x160,12)]
 save_json('palette.json',palette)

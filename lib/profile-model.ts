@@ -1,9 +1,10 @@
 import * as THREE from "three";
+import { bodyEmblemPath, bodyEmblemSampler, decodeBodyEmblem, playerPixelProgram, type BodyEmblemBank, type PlayerPixelBindings } from "./profile-body-emblem";
 import { profileModelFrame } from "./profile-model-view";
 import type { ProfileAppearance } from "./profile-appearance";
 
 type ImageBinding = { type: "2d" | "cube"; images: string[] };
-type RetailPass = {
+type RetailPass = PlayerPixelBindings & {
   name: string; pixel: number[]; attributes: number[]; constants: number[];
   instructions: number[]; stages: (ImageBinding | null)[]; accumulation: number;
   pixelColors: { word: number; slot: number; signed: boolean }[];
@@ -23,7 +24,6 @@ const read = async (name: string, signal: AbortSignal) => {
   return response;
 };
 const vectors = (values: number[]) => Array.from({ length: values.length / 4 }, (_, i) => new THREE.Vector4(...values.slice(i * 4, i * 4 + 4) as [number, number, number, number]));
-const rgbWord = (rgb: number[]) => (Math.round(rgb[0] * 255) << 16) | (Math.round(rgb[1] * 255) << 8) | Math.round(rgb[2] * 255);
 const wrapping = (mode: number) => mode === 1 ? THREE.RepeatWrapping : mode === 2 ? THREE.MirroredRepeatWrapping : THREE.ClampToEdgeWrapping;
 const blendFactor = (value: number): THREE.BlendingDstFactor => {
   switch (value) {
@@ -65,12 +65,14 @@ const vertexHeader = `precision highp float; precision highp int;
   }
 `;
 
-export async function mountRetailModel(host: HTMLElement, appearance: ProfileAppearance, signal: AbortSignal, emblem: string) {
-  const [data, vertexProgram, textureProgram, combiner] = await Promise.all([
+export async function mountRetailModel(host: HTMLElement, appearance: ProfileAppearance, signal: AbortSignal) {
+  const [data, vertexProgram, textureProgram, combiner, emblemBank, emblemBuffer] = await Promise.all([
     read(`${appearance.species}.json`, signal).then((r) => r.json() as Promise<ModelData>),
     read("vertex_program.glsl", signal).then((r) => r.text()),
     read("texture_program.glsl", signal).then((r) => r.text()),
     read("combiner.glsl", signal).then((r) => r.text()),
+    read("body-emblem.json", signal).then((r) => r.json() as Promise<BodyEmblemBank>),
+    read(bodyEmblemPath(appearance), signal).then((r) => r.arrayBuffer()),
   ]);
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   let shaderError = "";
@@ -103,15 +105,19 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       if (!images.has(key)) images.set(key, (async () => {
         const texture = binding.type === "cube"
           ? await new THREE.CubeTextureLoader().loadAsync(binding.images.map((name) => `/profile/${name}`))
-          : await new THREE.TextureLoader().loadAsync(binding.images[0] === emblem ? emblem : `/profile/${binding.images[0]}`);
+          : await new THREE.TextureLoader().loadAsync(`/profile/${binding.images[0]}`);
         if (disposed) { texture.dispose(); throw new DOMException("Aborted", "AbortError"); }
         texture.flipY = false; texture.colorSpace = THREE.NoColorSpace; textures.add(texture);
         return texture;
       })());
       return images.get(key)!;
     };
-    await Promise.all(data.materials.flatMap((m) => m.passes.flatMap((p) => p.stages.filter((s): s is ImageBinding => !!s))).map(load));
-    const emblemTexture = await load({ type: "2d", images: [emblem] });
+    await Promise.all(data.materials.filter((m) => !m.emblem).flatMap((m) => m.passes.flatMap((p) => p.stages.filter((s): s is ImageBinding => !!s))).map(load));
+    const emblemMips = decodeBodyEmblem(emblemBuffer, emblemBank);
+    const emblemTexture = new THREE.DataTexture(emblemMips[0].data, emblemBank.width, emblemBank.height);
+    emblemTexture.mipmaps = emblemMips; emblemTexture.generateMipmaps = false;
+    emblemTexture.flipY = false; emblemTexture.colorSpace = THREE.NoColorSpace;
+    emblemTexture.premultiplyAlpha = false; emblemTexture.needsUpdate = true; textures.add(emblemTexture);
     if (signal.aborted) throw new DOMException("Aborted", "AbortError");
     for (const [name, values, size] of [
       ["position", data.positions, 3], ["normal", data.normals, 3], ["uv", data.uvs, 2],
@@ -133,11 +139,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       Object.entries(geometry.attributes).forEach(([name, attribute]) => part.setAttribute(name, attribute));
       part.setDrawRange(group.start, group.count); groupGeometries.push(part);
       for (const pass of definition.passes) {
-        const program = [...pass.pixel], attributes = [...pass.attributes], constants = [...pass.constants];
-        for (const color of pass.pixelColors) {
-          const value = appearance.colors[color.slot].map((v) => color.signed ? (v + 1) / 2 : v);
-          program[color.word] = ((program[color.word] & 0xff000000) | rgbWord(value)) >>> 0;
-        }
+        const program = playerPixelProgram(pass, appearance, definition.emblem), attributes = [...pass.attributes], constants = [...pass.constants];
         for (const color of pass.vertexColors) {
           const target = color.bank ? constants : attributes;
           target.splice(color.register * 4, 3, ...appearance.colors[color.slot]);
@@ -167,15 +169,16 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
           uniforms[`stage${i}`] = { value: texture };
           declarations += `uniform ${cube ? "samplerCube" : "sampler2D"} stage${i};\n`;
           if (cube) lookupCube += `if(i==${i}u)return texture(stage${i},p);\n`;
-          else lookup2d += `if(i==${i}u){${flags[4] === 4 || flags[5] === 4 ? "if(any(lessThan(p,vec2(0)))||any(greaterThan(p,vec2(1))))return vec4(0);" : ""}return texture(stage${i},p);}\n`;
+          else lookup2d += definition.emblem ? `if(i==${i}u)return sampleBodyEmblem(stage${i},p);\n` : `if(i==${i}u){${flags[4] === 4 || flags[5] === 4 ? "if(any(lessThan(p,vec2(0)))||any(greaterThan(p,vec2(1))))return vec4(0);" : ""}return texture(stage${i},p);}\n`;
         }
-        // The source emblem texture is already composed in player colors.
+        // Armor emblems retain their own foreground-only combiner pass.
         const fragment = `precision highp float; precision highp int;
           uniform uint pixelProgram[60]; uniform sampler2D accumulation; uniform vec2 screenSize;
           in vec4 stageCoordinates[4]; in vec4 primaryColor, secondaryColor; out vec4 outColor;
           ${declarations}
           #define H2_COMBINER_WORD(i) pixelProgram[i]
           ${combiner}
+          ${definition.emblem ? bodyEmblemSampler : ""}
           vec4 fetchStage2D(uint i,vec2 p){${pass.accumulation >= 0 ? `if(i==${pass.accumulation}u)return texture(accumulation,gl_FragCoord.xy/screenSize);` : ""}${lookup2d}return vec4(0);}
           vec4 fetchStageCube(uint i,vec3 p){${lookupCube}return vec4(0);}
           #define TEXTURE_REJECT() discard
@@ -183,7 +186,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
           #define TEXTURE_BUMP_MATRIX(i) vec4(0)
           ${textureProgram}
           void main(){vec4 samples[4];runTextureStages(samples);
-            outColor=${definition.emblem ? "samples[0]" : "runCombiners(samples,primaryColor,secondaryColor)"};
+            outColor=runCombiners(samples,primaryColor,secondaryColor);
             ${pass.states[60] ? `if(!(${pass.states[58] === 513 ? `outColor.a<${((pass.states[61] ?? 0) / 255).toFixed(8)}` : `outColor.a>${((pass.states[61] ?? 0) / 255).toFixed(8)}`}))discard;` : ""}
             ${pass.states[59] ? "" : "outColor.a=1.;"}
           }`;

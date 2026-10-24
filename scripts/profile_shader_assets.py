@@ -115,9 +115,27 @@ def export_passes(cache, root, datum, species, export_image):
         for state in implementation['texture_states']:
             data=bytes.fromhex(state)
             samplers.append({'flags':list(data[:8]),'bump':list(struct.unpack_from('<4f',data,8))})
+        emblem_inputs=[]
+        if shader['name'].endswith(('mc_emblem','elite_emblem')):
+            _,root_at=cache.tag(datum,'shad');animation=cache.block(root_at+32,124)[0]
+            refs=cache.block(animation+68,4);params=cache.block(animation+76,2)
+            overlays=cache.block(animation+60,20);mapping=cache.block(animation+84,4)
+            implementations=cache.block(animation+52,10)
+            ranges=cache.block(animation+44,2)
+            template_index=template['passes'].index(p)
+            selected=cache.packed_range(cache.u16(ranges[template_index]),implementations)[index]
+            for at in cache.packed_range(cache.u16(selected+6),mapping):
+                destination,component,source=struct.unpack_from('<HBB',cache.data,at)
+                refs_at=cache.packed_range(cache.u16(params[source]),refs)[0]
+                overlay=overlays[cache.u16(refs_at)]
+                input_name=cache.u32(overlay)
+                assert input_name in (0x180005fc,0x0d0005ff) and component==3
+                word=pixel_word(destination)
+                assert word is not None
+                emblem_inputs.append({'word':word,'input':'foreground_enabled' if input_name==0x180005fc else 'enabled','mask':0xff000000})
         output.append({'name':cache.passes[p['pass']]['name'],
                        'pixel':pixel,'attributes':attributes,'constants':constants,
                        'instructions':instructions,'stages':stages,'accumulation':accumulation,
                        'pixelColors':pixel_colors,'vertexColors':vertex_colors,
-                       'states':states,'samplers':samplers})
+                       'states':states,'samplers':samplers,**({'emblemInputs':emblem_inputs}if emblem_inputs else {})})
     return output
