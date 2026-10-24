@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { profileModelFrame } from "./profile-model-view";
 import type { ProfileAppearance } from "./profile-appearance";
 
 type ImageBinding = { type: "2d" | "cube"; images: string[] };
@@ -116,12 +117,11 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       ["position", data.positions, 3], ["normal", data.normals, 3], ["uv", data.uvs, 2],
       ["tangent", data.tangents, 3], ["binormal", data.binormals, 3],
     ] as const) geometry.setAttribute(name, new THREE.Float32BufferAttribute(values, size));
-    geometry.computeBoundingBox();
-    const bounds = geometry.boundingBox!, center = bounds.getCenter(new THREE.Vector3()).add(new THREE.Vector3(...data.origin as [number, number, number]));
+    const frame = profileModelFrame(geometry.getAttribute("position").array, data.origin);
     const scene = new THREE.Scene(), baseScene = new THREE.Scene();
-    const model = new THREE.Group(), baseModel = new THREE.Group();
-    model.position.fromArray(data.origin); baseModel.position.copy(model.position);
-    scene.add(model); baseScene.add(baseModel);
+    const { pivot, model } = frame.createPivot();
+    const { pivot: basePivot, model: baseModel } = frame.createPivot();
+    scene.add(pivot); baseScene.add(basePivot);
     const camera = new THREE.PerspectiveCamera(35, 1, .01, 30);
     camera.up.set(0, 0, 1);
     const viewRight = new THREE.Vector3(1, 0, 0), viewUp = new THREE.Vector3(0, 0, 1), viewBack = new THREE.Vector3(0, -1, 0);
@@ -224,9 +224,9 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       renderer.setSize(width, height); renderer.getDrawingBufferSize(screenSize); accumulation.setSize(screenSize.x, screenSize.y);
       camera.aspect = width / height;
       // Keep the editor's forward bearing and center the complete posed figure.
-      const size = bounds.getSize(new THREE.Vector3());
-      const distance = Math.max(size.z, size.x / camera.aspect) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.15 + size.y / 2;
-      camera.position.set(center.x, center.y - distance, center.z); camera.lookAt(center);
+      const distance = frame.distance(camera.aspect, camera.fov);
+      camera.position.copy(frame.center); camera.position.y -= distance; camera.lookAt(frame.center);
+      camera.far = Math.max(30, distance * 2);
       camera.updateProjectionMatrix(); camera.updateMatrixWorld(); viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); render();
     };
     resize();
@@ -237,8 +237,8 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
     canvas.tabIndex = 0;
     canvas.setAttribute("aria-label", "Player model. Drag left or right to rotate, or use the arrow keys. Press Home to reset the view.");
     const options = { signal: interactions.signal };
-    const rotate = (delta: number) => { model.rotation.z += delta; baseModel.rotation.z = model.rotation.z; render(); };
-    const reset = () => { model.rotation.z = baseModel.rotation.z = 0; render(); };
+    const rotate = (delta: number) => { pivot.rotation.z += delta; basePivot.rotation.z = pivot.rotation.z; render(); };
+    const reset = () => { pivot.rotation.z = basePivot.rotation.z = 0; render(); };
     let pointer: number | null = null, previousX = 0;
     canvas.addEventListener("pointerdown", (event) => {
       if (!event.isPrimary || event.button !== 0 || pointer !== null) return;

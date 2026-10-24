@@ -841,7 +841,7 @@ tbody tr:nth-child(even) {
 .profile-avatar { display: inline-flex; align-items: center; justify-content: center; width: 88px; height: 88px; flex: 0 0 88px; }
 .profile-avatar img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .service-record-body { display: grid; grid-template-columns: minmax(260px, .82fr) minmax(0, 2fr); grid-template-areas: "model statistics" "model history"; grid-template-rows: auto 1fr; gap: 22px; align-items: start; }
-.service-record-body .profile-identity { grid-area: model; }
+.service-record-body .profile-identity { grid-area: model; align-self: stretch; display: flex; flex-direction: column; min-height: 360px; }
 .service-record-body .profile-details { grid-area: statistics; margin: 0; min-width: 0; }
 .profile-match-history { grid-area: history; min-width: 0; }
 .service-record-body .panel-caption h2 { font: inherit; letter-spacing: inherit; color: inherit; }
@@ -858,15 +858,18 @@ tbody tr:nth-child(even) {
 .profile-match-history .empty-state svg { width: 26px; height: 26px; margin-bottom: 18px; }
 .profile-match-history th, .profile-match-history td { padding: 15px 13px; }
 .profile-match-history .load-more { margin-top: 18px; }
-.profile-model-panel { position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 45%, #24486480, #08162300 65%), linear-gradient(#07162366, #07162366), url('/vista/profile-grid-material.svg') center / cover; }
-.profile-model { width: 100%; height: 360px; }
+.profile-model-panel {
+  position: relative; min-width: 0; flex: 1; min-height: 0; background-color: #091b2c;
+  background-image: radial-gradient(ellipse at 50% 45%, #24486480, #08162300 70%), linear-gradient(#2680db30 1px, transparent 1px), linear-gradient(90deg, #2680db30 1px, transparent 1px);
+  background-size: 100% 100%, 26px 26px, 26px 26px;
+}
+.profile-model { position: absolute; inset: 0; width: 100%; height: 100%; }
 .profile-model canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: pan-y; }
 .profile-model canvas.is-dragging { cursor: grabbing; }
 .profile-model canvas:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
 .model-status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #9bb4c8; font-size: 12px; }
-.model-interaction-hint { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 12px 20px 18px; font-size: 10px; letter-spacing: .4px; color: #8ba9bf; }
+.model-interaction-hint { position: absolute; bottom: 14px; inset-inline: 0; pointer-events: none; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 0 20px; font-size: 10px; letter-spacing: .4px; color: #8ba9bf; }
 .model-interaction-hint span { font-size: 17px; line-height: 1; }
-.model-unavailable .profile-model { height: 220px; }
 @media (max-width: 1000px) and (min-width: 761px) {
   .service-record-body { grid-template-columns: minmax(230px, .85fr) minmax(0, 1.6fr); }
   .service-record-body .profile-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -885,12 +888,12 @@ tbody tr:nth-child(even) {
   .service-record-header .eyebrow { font-size: 8px; }
   .profile-metadata { font-size: 11px; gap: 8px; }
   .service-record-header > .rank-large { grid-column: 2; justify-self: start; margin: 0; }
-  .service-record-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "statistics" "model" "history"; gap: 18px; }
+  .service-record-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "statistics" "model" "history"; grid-template-rows: auto auto auto; gap: 18px; }
   .service-record-body .profile-details dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-details dl > div { padding: 18px; }
   .profile-details dl > div:nth-child(2) { border-right: 0; }
   .profile-details dl > div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
-  .profile-model { height: 300px; }
+  .service-record-body .profile-identity { min-height: 300px; }
 }
 .steam-profile-link {
   display: inline-flex;
