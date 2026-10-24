@@ -72,6 +72,10 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
     read("combiner.glsl", signal).then((r) => r.text()),
   ]);
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  let shaderError = "";
+  renderer.debug.onShaderError = (gl, _program, vertex, fragment) => {
+    shaderError = `${gl.getShaderInfoLog(vertex) || ""} ${gl.getShaderInfoLog(fragment) || ""}`;
+  };
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setClearColor(0, 0);
   renderer.autoClear = false; renderer.sortObjects = true;
   renderer.domElement.setAttribute("role", "img");
@@ -144,6 +148,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
           accumulation: { value: accumulation.texture }, screenSize: { value: screenSize },
           viewProjection: { value: viewProjection }, viewRight: { value: viewRight }, viewUp: { value: viewUp }, viewBack: { value: viewBack },
         };
+        if (pass.accumulation < 0) delete uniforms.accumulation;
         let declarations = "", lookup2d = "", lookupCube = "";
         for (let i = 0; i < 4; i++) {
           const binding = pass.stages[i];
@@ -178,7 +183,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
           ${textureProgram}
           void main(){vec4 samples[4];runTextureStages(samples);
             outColor=${definition.emblem ? "samples[0]" : "runCombiners(samples,primaryColor,secondaryColor)"};
-            ${pass.states[60] ? `if(!(${pass.states[58] === 513 ? `outColor.a<${(pass.states[61] ?? 0) / 255}` : `outColor.a>${(pass.states[61] ?? 0) / 255}`}))discard;` : ""}
+            ${pass.states[60] ? `if(!(${pass.states[58] === 513 ? `outColor.a<${((pass.states[61] ?? 0) / 255).toFixed(8)}` : `outColor.a>${((pass.states[61] ?? 0) / 255).toFixed(8)}`}))discard;` : ""}
             ${pass.states[59] ? "" : "outColor.a=1.;"}
           }`;
         const base = pass.name.endsWith("default_texture_four_change_color_zwrite");
@@ -201,7 +206,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
         mesh.renderOrder = base ? 0 : pass.accumulation >= 0 ? 1 : definition.emblem ? 3 : 2;
         model.add(mesh);
         if (base) {
-          const baseMaterial = material.clone(); materials.push(baseMaterial);
+          const baseMaterial = material.clone(); baseMaterial.uniforms = material.uniforms; materials.push(baseMaterial);
           baseModel.add(new THREE.Mesh(part, baseMaterial)); material.colorWrite = false;
         }
       }
@@ -212,7 +217,7 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       renderer.setRenderTarget(accumulation); renderer.clear(); renderer.render(baseScene, camera);
       renderer.setRenderTarget(null); renderer.clear(); renderer.render(scene, camera);
     };
-    observer = new ResizeObserver(() => {
+    const resize = () => {
       const { width, height } = host.getBoundingClientRect();
       if (width < 1 || height < 1 || signal.aborted) return;
       renderer.setSize(width, height); renderer.getDrawingBufferSize(screenSize); accumulation.setSize(screenSize.x, screenSize.y);
@@ -222,7 +227,10 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
       const distance = Math.max(size.z, size.x / camera.aspect) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) * 1.15 + size.y / 2;
       camera.position.set(center.x, center.y - distance, center.z); camera.lookAt(center);
       camera.updateProjectionMatrix(); camera.updateMatrixWorld(); viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); render();
-    });
+    };
+    resize();
+    if (shaderError) throw new Error("Your browser could not display the player model.");
+    observer = new ResizeObserver(resize);
     observer.observe(host);
     return { dispose, rotate: (delta: number) => { model.rotation.z += delta; baseModel.rotation.z = model.rotation.z; render(); }, reset: () => { model.rotation.z = baseModel.rotation.z = 0; render(); } };
   } catch (error) { dispose(); throw error; }

@@ -155,7 +155,7 @@ void runVertexProgram() {
         if(ilu==4u)l=vec4(inversesqrt(abs(c.x)));
         if(ilu==5u)l=vec4(exp2(floor(c.x)),fract(c.x),exp2(c.x),1);
         if(ilu==6u){float v=log2(abs(c.x));l=vec4(floor(v),abs(c.x)/exp2(floor(v)),v,1);}
-        if(ilu==7u)l=vec4(1,max(c.x,0),c.x>0.0?pow(max(c.y,0),clamp(c.w,-128.0,128.0)):0,1);
+        if(ilu==7u)l=vec4(1,max(c.x,0.0),c.x>0.0?pow(max(c.y,0.0),clamp(c.w,-128.0,128.0)):0.0,1.0);
 #ifdef H2_EXTENDED_VERTEX_BANK
         if(mac==13u) {
 #ifdef H2_VERTEX_XEMU_ARITHMETIC

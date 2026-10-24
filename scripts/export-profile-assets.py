@@ -19,6 +19,7 @@ p = argparse.ArgumentParser()
 p.add_argument('--game-root', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 a = p.parse_args()
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(a.game_root / 'tools'))
 from audit_rendering import Cache
 from profile_shader_assets import export_passes
@@ -229,6 +230,9 @@ def export_model(capture, definition, origin, species, weapon=False):
     return {'positions':positions,'normals':normals,'tangents':tangents,'binormals':binormals,'uvs':uvs,'groups':groups,'materials':materials,'model_tag':f'{mode_id:08x}'}
 
 scenes=json.loads((a.game_root/'analysis/frontend/profile-regression/model-scene-assets.json').read_text())
+provenance['scene_source']='analysis/frontend/profile-regression/model-scene-assets.json'
+provenance['scene_sha256']=hashlib.sha256((a.game_root/provenance['scene_source']).read_bytes()).hexdigest()
+provenance['shader_banks']={species:hashlib.sha256((a.game_root/f'analysis/frontend/customization/original-preview-shader-banks-{species}.json').read_bytes()).hexdigest()for species in ['spartan','elite']}
 for species,definition,actor in [('spartan',0xe23400bf,'ui_player1c'),('elite',0xe3110154,'ui_player1d')]:
     authored=next(o for o in scenes['objects'] if o['name']==actor)
     capture=next(o for o in poses if o['position']==authored['position'] and int(o['definition'],16)==definition)
@@ -248,7 +252,7 @@ for species,definition,actor in [('spartan',0xe23400bf,'ui_player1c'),('elite',0
     save_json(species+'.json',model)
     provenance[species]={'model_tag':model['model_tag'],'actor':actor,'screen':47,'held_weapon':held['definition'],'vertices':len(model['positions'])//3,'triangles':len(model['positions'])//9}
 for name in ['vertex_program.glsl','texture_program.glsl']:
-    shader=(a.game_root/'shaders'/name).read_text().replace('#include "render_view.glsl"','').replace('precise ','')
+    shader=(a.game_root/'shaders'/name).read_text().replace('#include "render_view.glsl"','').replace('precise ','').replace('max(c.x,0)','max(c.x,0.0)').replace('max(c.y,0)','max(c.y,0.0)').replace(')):0,1)', ')):0.0,1.0)')
     shader=shader.replace('material.vertexInstructions','vertexInstructions').replace('material.vertexConstants','vertexConstants').replace('material.vertexAttributes','vertexAttributes').replace('material.flags.w','instructionCount').replace('material.flags.z','shaderKind')
     shader=shader.replace('vpInput[0]=vec4(position,1)','vpInput[0]=modelMatrix*vec4(position,1)').replace('vpInput[2]=vec4(normal,1);vpInput[3]=vec4(tangent,1);vpInput[4]=vec4(binormal,1)','vpInput[2]=vec4(mat3(modelMatrix)*normal,1);vpInput[3]=vec4(mat3(modelMatrix)*tangent,1);vpInput[4]=vec4(mat3(modelMatrix)*binormal,1)')
     (a.output/name).write_text(shader)
