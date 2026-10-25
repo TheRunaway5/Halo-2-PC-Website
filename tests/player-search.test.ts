@@ -13,6 +13,32 @@ test("display-name queries preserve spaces, punctuation, Unicode and leading @",
   }
 });
 
+test("friend-tag search disambiguates duplicate names and follows renames without writing tags", () => {
+  const db = new DatabaseSync(":memory:");
+  try {
+    db.exec(`CREATE TABLE history_players(player TEXT,public_id TEXT);
+      CREATE TABLE player_profiles(player TEXT,screen_name TEXT,discord_username TEXT);
+      CREATE TABLE player_friend_tags(player TEXT PRIMARY KEY,discriminator TEXT UNIQUE);
+      INSERT INTO history_players VALUES('private-a','public-a'),('private-b','public-b'),('private-old','public-old');
+      INSERT INTO player_profiles VALUES('private-a','Halo Pilot',''),('private-b','Halo Pilot',''),('private-old','Legacy','');
+      INSERT INTO player_friend_tags VALUES('private-a','00000001'),('private-b','99999999');`);
+    const search = createPlayerSearch(db);
+    db.exec("PRAGMA query_only=ON");
+    assert.equal(search("hALo pILot#00000001")[0].id, "public-a");
+    assert.equal(search("Halo Pilot#99999999")[0].id, "public-b");
+    assert.equal(search("Legacy")[0].friend_tag, null);
+    assert.deepEqual(search("Other Name#00000001"), []);
+    assert.deepEqual(search("Halo Pilot#12345678"), []);
+    assert.ok(!JSON.stringify(search("Halo")).includes("private-"));
+    db.exec("PRAGMA query_only=OFF; UPDATE player_profiles SET screen_name='New Name' WHERE player='private-a'; PRAGMA query_only=ON;");
+    assert.deepEqual(search("Halo Pilot#00000001"), []);
+    assert.equal(search("New Name#00000001")[0].id, "public-a");
+    assert.equal(db.prepare("SELECT count(*) AS n FROM player_friend_tags").get()!.n, 2);
+    assert.equal(displayNameQuery("a".repeat(64)+"#00000001"), "a".repeat(64)+"#00000001");
+    assert.equal(displayNameQuery("a".repeat(65)+"#00000001"), null);
+  } finally { db.close(); }
+});
+
 test("published display-name search is literal, case insensitive, bounded and independent of Discord", () => {
   const db = new DatabaseSync(":memory:");
   try {

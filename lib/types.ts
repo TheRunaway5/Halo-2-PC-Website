@@ -10,6 +10,7 @@ export interface Player {
   steam_name?: string | null;
   steam_profile_url?: string | null;
   screen_name: string;
+  friend_tag?: string | null;
   joined_at?: number | null;
   service_tag?: string | null;
   appearance?: {

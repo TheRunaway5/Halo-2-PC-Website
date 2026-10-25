@@ -6,6 +6,7 @@ import type { MatchPage } from "@/lib/types";
 import { PlayerAppearance, PlayerEmblem } from "./player-appearance";
 import { RankBadge } from "./rank-badge";
 import { SteamProfileLink } from "./steam-profile-link";
+import { FriendTag } from "./friend-tag";
 import { EmptyState } from "./ui";
 import { VistaIntro } from "./vista-motion";
 
@@ -28,6 +29,7 @@ export function PlayerServiceRecord({ history, loadingOlder, onLoadOlder }: {
       <div className="service-record-identity">
         <p className="eyebrow">SERVICE RECORD</p>
         <h1 className="player-name">{player.screen_name}<SteamProfileLink player={player} /></h1>
+        <FriendTag key={player.friend_tag} tag={player.friend_tag} />
         <div className="profile-metadata">
           {player.service_tag && <span className="service-tag" aria-label={`Service tag ${player.service_tag}`}>{player.service_tag}</span>}
           <span>{joined ? `Joined ${joined}` : "Join date not recorded"}</span>

@@ -31,6 +31,21 @@ GoDaddy DNS uses the four [documented GitHub Pages addresses](https://docs.githu
 
 ## Live master integration
 
+Friend tags use the current Halo display name plus a persistent, globally unique
+eight-digit suffix, for example `EmkMage#12345678`. The master assigns a suffix
+on the account's next authenticated connection, including existing accounts;
+public website reads never allocate one. Renaming changes the name portion and
+retains the suffix, account ownership, friends, stats and EOS bindings. Profiles
+offer a copy button and searches accept either a partial display name or an exact
+full tag. Match and report headings retain plain display names. Unassigned legacy
+tags are omitted until the account reconnects. The website API remains read-only
+and publishes no friend lists or block preferences. Deploy the master migration
+before restarting the website API; older databases remain readable without tags.
+
+Friendships use the existing master SQLite database and Steam authentication;
+they require no additional hosting service or Epic Account Services login.
+The current custom OpenID/PUID mapping and EOS display-name claim are unchanged.
+
 A separate Node TypeScript bridge on the existing master host serves `/website/*`. It reads the master's existing SQLite database using `readOnly` and `query_only`. EOS publication uses a Rust SDK worker and a separate writable cache; it never writes the master database. It runs with a read-only filesystem, no Linux capabilities, private Docker networking, bounded memory/CPU and request limits. Credential files in the mounted master volume are masked. Caddy routes the prefix while preserving the game's original routes and WebSockets. The profile, population and EOS cache endpoints are deployed; remaining native-client acceptance is described in [the worker runbook](backend/eos-worker/README.md).
 
 Public bridge endpoints:

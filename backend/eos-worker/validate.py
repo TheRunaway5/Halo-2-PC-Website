@@ -17,6 +17,8 @@ def main():
     parser.add_argument('--report',type=Path)
     parser.add_argument('--server-config',type=Path)
     parser.add_argument('--game-config',type=Path)
+    parser.add_argument('--friend-config',type=Path,
+                        help='Check the private storage config/platform and deny publisher operations; no player cloud writes')
     parser.add_argument('--master-source',type=Path,
                         help='Exact master source for isolated accepted-result HTTP/ledger qualification')
     parser.add_argument('--master-tests',type=Path,
@@ -54,6 +56,24 @@ def main():
                 'sdk_sha256':hashlib.sha256(args.sdk_archive.read_bytes()).hexdigest(),
                 'commands':results,'scratch':str(root),'large_artifacts_retained':False,
                 'sources':{str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [source/'Cargo.toml',source/'Cargo.lock',source/'build.rs',*sorted((source/'src').glob('*'))]}}
+        if report['passed']:
+            import sys
+            sys.path.insert(0,str(source/'tests'))
+            from friend_storage import qualify_storage_boundary
+            try:report['friend_storage_boundary']=qualify_storage_boundary(source,root,env)
+            except Exception as error:
+                report['passed']=False
+                report['friend_storage_boundary']={'passed':False,'error':str(error)[:256]}
+        report['sources'].update({str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest() for p in
+            (source/'tests/friend_storage.py',source/'tests/storage_fixture.cpp',source/'tests/friend_config.py')})
+        if report['passed'] and args.friend_config:
+            import sys
+            sys.path.insert(0,str(source/'tests'))
+            from friend_config import qualify_private_config
+            try:report['friend_config']=qualify_private_config(root,env,args.friend_config)
+            except Exception:
+                report['passed']=False
+                report['friend_config']={'passed':False,'error':'Private storage config/platform qualification failed'}
         if args.master_source:
             report['accepted_result_sources']={str(p.relative_to(source.parent.parent)):hashlib.sha256(p.read_bytes()).hexdigest()
                 for p in [source/'tests/accepted_result_fixture.py',source/'tests/live_result_publication.ts',

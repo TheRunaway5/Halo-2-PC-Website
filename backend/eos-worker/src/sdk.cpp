@@ -6,6 +6,8 @@
 #include <eos_leaderboards.h>
 #include <eos_connect.h>
 #include <eos_logging.h>
+#include <eos_playerdatastorage.h>
+#include <cstring>
 #include <algorithm>
 #include <stdexcept>
 #include <string>
@@ -17,8 +19,10 @@ static std::string user_text(EOS_ProductUserId user){char text[EOS_PRODUCTUSERID
 static EOS_ProductUserId user_id(rust::Str user){auto text=std::string(user);auto id=EOS_ProductUserId_FromString(text.c_str());if(!id)throw std::runtime_error("Invalid PUID");return id;}
 struct Sdk::Impl {
   EOS_HPlatform platform{};EOS_HStats stats{};EOS_HLeaderboards boards{};EOS_HConnect connect{};
+  EOS_HPlayerDataStorage storage{};EOS_ProductUserId local{};EOS_HPlayerDataStorageFileTransferRequest transfer{};
+  std::string expected,data;size_t offset{};bool missing{};
   bool initialized{};int32_t result=-1;Proof verified{};
-  ~Impl(){if(platform)EOS_Platform_Release(platform);if(initialized)EOS_Shutdown();}
+  ~Impl(){if(transfer)EOS_PlayerDataStorageFileTransferRequest_Release(transfer);if(platform)EOS_Platform_Release(platform);if(initialized)EOS_Shutdown();}
   void done(EOS_EResult status){if(EOS_EResult_IsOperationComplete(status))result=static_cast<int32_t>(status);}
 };
 Sdk::Sdk(const Config &config):impl_(std::make_unique<Impl>()){
@@ -27,9 +31,12 @@ Sdk::Sdk(const Config &config):impl_(std::make_unique<Impl>()){
   auto c=config;EOS_Platform_Options options{};options.ApiVersion=EOS_PLATFORM_OPTIONS_API_LATEST;
   options.ProductId=c.product.c_str();options.SandboxId=c.sandbox.c_str();options.DeploymentId=c.deployment.c_str();
   options.ClientCredentials.ClientId=c.client.c_str();options.ClientCredentials.ClientSecret=c.secret.c_str();
-  options.CacheDirectory=c.cache.c_str();options.bIsServer=EOS_TRUE;options.Flags=EOS_PF_DISABLE_OVERLAY|EOS_PF_DISABLE_SOCIAL_OVERLAY;options.TickBudgetInMilliseconds=2;
+  options.CacheDirectory=c.cache.c_str();options.bIsServer=c.storage?EOS_FALSE:EOS_TRUE;
+  if(c.storage)options.EncryptionKey=c.encryption.c_str();
+  options.Flags=EOS_PF_DISABLE_OVERLAY|EOS_PF_DISABLE_SOCIAL_OVERLAY;options.TickBudgetInMilliseconds=2;
   impl_->platform=EOS_Platform_Create(&options);if(!impl_->platform)throw std::runtime_error("EOS server platform unavailable");
   impl_->stats=EOS_Platform_GetStatsInterface(impl_->platform);impl_->boards=EOS_Platform_GetLeaderboardsInterface(impl_->platform);impl_->connect=EOS_Platform_GetConnectInterface(impl_->platform);
+  if(c.storage){impl_->storage=EOS_Platform_GetPlayerDataStorageInterface(impl_->platform);if(!impl_->storage)throw std::runtime_error("EOS friend storage unavailable");}
 }
 Sdk::~Sdk()=default;
 void Sdk::publish(rust::Str user,rust::Slice<const Stat> values){
@@ -68,6 +75,85 @@ void Sdk::verify(rust::Str user,rust::Str token){const std::string text(token);E
   });
 }
 Proof Sdk::proof()const{return impl_->verified;}
+static constexpr const char* friend_file="h2friends-v1.json";
+void Sdk::storage_login(rust::Str token,rust::Str user){
+  if(!impl_->storage)throw std::runtime_error("Storage client required");
+  impl_->expected=std::string(user);impl_->local=nullptr;impl_->result=-1;
+  const std::string jwt(token);
+  EOS_Connect_Credentials credentials{};credentials.ApiVersion=EOS_CONNECT_CREDENTIALS_API_LATEST;
+  credentials.Type=EOS_EExternalCredentialType::EOS_ECT_OPENID_ACCESS_TOKEN;credentials.Token=jwt.c_str();
+  EOS_Connect_LoginOptions options{};options.ApiVersion=EOS_CONNECT_LOGIN_API_LATEST;options.Credentials=&credentials;
+  EOS_Connect_Login(impl_->connect,&options,impl_.get(),[](const EOS_Connect_LoginCallbackInfo* r){
+    auto& self=*static_cast<Impl*>(r->ClientData);
+    if(r->ResultCode!=EOS_Success){self.done(r->ResultCode);return;}
+    try{
+      // No CreateUser/LinkAccount fallback: only the already verified binding.
+      if(user_text(r->LocalUserId)!=self.expected){self.done(EOS_InvalidUser);return;}
+      self.local=r->LocalUserId;self.done(EOS_Success);
+    }catch(...){self.done(EOS_UnexpectedError);}
+  });
+}
+void Sdk::storage_clear_cache(){
+  if(!impl_->local)throw std::runtime_error("Storage login required");
+  if(impl_->transfer){EOS_PlayerDataStorageFileTransferRequest_Release(impl_->transfer);impl_->transfer=nullptr;}
+  impl_->result=-1;
+  EOS_PlayerDataStorage_DeleteCacheOptions options{};options.ApiVersion=EOS_PLAYERDATASTORAGE_DELETECACHE_API_LATEST;options.LocalUserId=impl_->local;
+  check(EOS_PlayerDataStorage_DeleteCache(impl_->storage,&options,impl_.get(),[](const EOS_PlayerDataStorage_DeleteCacheCallbackInfo* r){
+    static_cast<Impl*>(r->ClientData)->done(r->ResultCode);
+  }));
+}
+void Sdk::storage_query(){
+  if(!impl_->local)throw std::runtime_error("Storage login required");
+  impl_->result=-1;impl_->missing=false;
+  EOS_PlayerDataStorage_QueryFileOptions options{};options.ApiVersion=EOS_PLAYERDATASTORAGE_QUERYFILE_API_LATEST;
+  options.LocalUserId=impl_->local;options.Filename=friend_file;
+  EOS_PlayerDataStorage_QueryFile(impl_->storage,&options,impl_.get(),[](const EOS_PlayerDataStorage_QueryFileCallbackInfo* r){
+    auto& self=*static_cast<Impl*>(r->ClientData);
+    self.missing=r->ResultCode==EOS_NotFound;self.done(self.missing?EOS_Success:r->ResultCode);
+  });
+}
+bool Sdk::storage_missing()const{return impl_->missing;}
+void Sdk::storage_read(){
+  if(!impl_->local)throw std::runtime_error("Storage login required");
+  if(impl_->transfer){EOS_PlayerDataStorageFileTransferRequest_Release(impl_->transfer);impl_->transfer=nullptr;}
+  impl_->result=-1;impl_->data.clear();
+  EOS_PlayerDataStorage_ReadFileOptions options{};options.ApiVersion=EOS_PLAYERDATASTORAGE_READFILE_API_LATEST;
+  options.LocalUserId=impl_->local;options.Filename=friend_file;options.ReadChunkLengthBytes=4096;
+  options.ReadFileDataCallback=[](const EOS_PlayerDataStorage_ReadFileDataCallbackInfo* r){
+    using enum EOS_PlayerDataStorage_EReadResult;
+    auto& self=*static_cast<Impl*>(r->ClientData);
+    if(r->LocalUserId!=self.local || r->TotalFileSizeBytes>32768 ||
+       r->DataChunkLengthBytes>32768-self.data.size())return EOS_RR_FailRequest;
+    try{if(r->DataChunkLengthBytes)self.data.append(static_cast<const char*>(r->DataChunk),r->DataChunkLengthBytes);}
+    catch(...){return EOS_RR_FailRequest;}
+    if(r->bIsLastChunk && self.data.size()!=r->TotalFileSizeBytes)return EOS_RR_FailRequest;
+    return EOS_RR_ContinueReading;
+  };
+  impl_->transfer=EOS_PlayerDataStorage_ReadFile(impl_->storage,&options,impl_.get(),[](const EOS_PlayerDataStorage_ReadFileCallbackInfo* r){
+    static_cast<Impl*>(r->ClientData)->done(r->ResultCode);
+  });
+  if(!impl_->transfer)throw std::runtime_error("Storage read could not start");
+}
+rust::String Sdk::storage_value()const{return rust::String(impl_->data);}
+void Sdk::storage_write(rust::Str record){
+  if(!impl_->local || record.empty() || record.size()>32768)throw std::runtime_error("Invalid storage write");
+  if(impl_->transfer){EOS_PlayerDataStorageFileTransferRequest_Release(impl_->transfer);impl_->transfer=nullptr;}
+  impl_->result=-1;impl_->offset=0;impl_->data=std::string(record);
+  EOS_PlayerDataStorage_WriteFileOptions options{};options.ApiVersion=EOS_PLAYERDATASTORAGE_WRITEFILE_API_LATEST;
+  options.LocalUserId=impl_->local;options.Filename=friend_file;options.ChunkLengthBytes=4096;
+  options.WriteFileDataCallback=[](const EOS_PlayerDataStorage_WriteFileDataCallbackInfo* r,void* output,uint32_t* written){
+    using enum EOS_PlayerDataStorage_EWriteResult;
+    auto& self=*static_cast<Impl*>(r->ClientData);*written=0;
+    if(r->LocalUserId!=self.local || self.offset>self.data.size() || !r->DataBufferLengthBytes)return EOS_WR_FailRequest;
+    const auto n=std::min(size_t(r->DataBufferLengthBytes),self.data.size()-self.offset);
+    std::memcpy(output,self.data.data()+self.offset,n);self.offset+=n;*written=static_cast<uint32_t>(n);
+    return self.offset==self.data.size()?EOS_WR_CompleteRequest:EOS_WR_ContinueWriting;
+  };
+  impl_->transfer=EOS_PlayerDataStorage_WriteFile(impl_->storage,&options,impl_.get(),[](const EOS_PlayerDataStorage_WriteFileCallbackInfo* r){
+    static_cast<Impl*>(r->ClientData)->done(r->ResultCode);
+  });
+  if(!impl_->transfer)throw std::runtime_error("Storage write could not start");
+}
 int32_t Sdk::poll(){EOS_Platform_Tick(impl_->platform);return impl_->result;}
 std::unique_ptr<Sdk> create(const Config &config){return std::make_unique<Sdk>(config);}
 }

@@ -9,7 +9,7 @@ import { VistaLoadingRings } from "./vista-motion";
 import { ArrowRight, ArrowUpRight, Search, UserRound } from "lucide-react";
 import { api, playerLink } from "@/lib/api";
 import type { MatchPage, Player } from "@/lib/types";
-import { DISPLAY_NAME_LIMIT, displayNameQuery } from "@/lib/player-search";
+import { PLAYER_SEARCH_LIMIT, displayNameQuery } from "@/lib/player-search";
 import { EmptyState, Loading, SectionTitle } from "./ui";
 export function PlayerSearch() {
   const params = useSearchParams(),
@@ -58,7 +58,7 @@ export function PlayerSearch() {
     if (!value) {
       setLoading(false);
       setError(
-        "Enter a display name using 1–64 characters.",
+        "Enter a display name or a full friend tag.",
       );
       return;
     }
@@ -123,7 +123,7 @@ export function PlayerSearch() {
                 spellCheck={false}
                 placeholder="Enter a player’s display name"
                 value={displayName}
-                maxLength={DISPLAY_NAME_LIMIT}
+                maxLength={PLAYER_SEARCH_LIMIT}
                 onChange={(e) => setDisplayName(e.target.value)}
                 aria-describedby="search-help"
                 required
@@ -137,8 +137,8 @@ export function PlayerSearch() {
               </button>
             </div>
             <p id="search-help">
-              Search all or part of a player’s display name, regardless of
-              capitalization. Hover over the Steam icon to see their Steam handle.
+              Search a display name or enter a full friend tag, such as EmkMage#12345678.
+              Hover over the Steam icon to see their Steam handle.
             </p>
           </form>
           {loading ? (
@@ -161,6 +161,7 @@ export function PlayerSearch() {
                   </Link>
                   <div>
                     <h2 className="player-name"><Link href={playerLink(p.id)}>{p.screen_name}</Link><SteamProfileLink player={p} /></h2>
+                    {p.friend_tag && <p className="friend-tag search-friend-tag">{p.friend_tag}</p>}
                   </div>
                   <RankBadge skill={p.skill} />
                   <Link className="search-result-action" href={playerLink(p.id)}>

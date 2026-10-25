@@ -17,6 +17,7 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
     CREATE TABLE history_players(player TEXT,public_id TEXT);
     CREATE TABLE player_profiles(player TEXT,steam_name TEXT,screen_name TEXT,discord_username TEXT);
     CREATE TABLE player_identities(player TEXT,provider TEXT,subject TEXT);
+    CREATE TABLE player_friend_tags(player TEXT PRIMARY KEY,discriminator TEXT UNIQUE);
     CREATE TABLE playlist_skill(player TEXT,playlist TEXT,configuration TEXT,raw_rank INTEGER);
     CREATE TABLE match_results(id TEXT,playlist TEXT,ranked INTEGER);
     CREATE TABLE match_result_players(match TEXT,player TEXT);
@@ -29,6 +30,7 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
       ('private-unpublished','Unpublished','Halo Pilot','');
     INSERT INTO player_identities VALUES('private-player','steam','76561198000000001'),
       ('private-other','steam','76561198000000002');
+    INSERT INTO player_friend_tags VALUES('private-player','00000001'),('private-other','99999999');
   `);
   db.close();
   const upstream = createServer((req, res) => {
@@ -124,6 +126,10 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
     const displaySearch = await fetch(base + "/v1/history/players?display_name=%20hAlO%20pI%20");
     assert.equal(displaySearch.status, 200);
     const found = await displaySearch.json();
+    assert.equal(found.players[0].friend_tag, "Halo Pilot#00000001");
+    const tagSearch = await (await fetch(base+"/v1/history/players?display_name="+encodeURIComponent("Halo Pilot#99999999"))).json();
+    assert.equal(tagSearch.players.length, 1);
+    assert.equal(tagSearch.players[0].id, "cccccccc-cccc-cccc-cccc-cccccccccccc");
     assert.deepEqual(found.players.map((player: { id: string }) => player.id), [
       playerId, "cccccccc-cccc-cccc-cccc-cccccccccccc",
     ]);
@@ -167,6 +173,12 @@ test("HTTP bridge restricts methods and routes, isolates auth, and scopes CORS",
     for (const path of [
       "/v1/admin/credentials",
       "/v1/account/session",
+      "/v1/account/eos-token",
+      "/v1/friends",
+      "/v1/friends/commands",
+      "/v1/history/../friends",
+      "/v1/history/%2e%2e/friends",
+      "/h2friends-v1.json",
       "/v1/servers",
       "/v1/history/matches/not-a-public-alias",
     ])

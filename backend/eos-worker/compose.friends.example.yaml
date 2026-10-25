@@ -1,0 +1,15 @@
+# Opt-in after compose.master.example.yaml. Only the master gets these secrets
+# and this ephemeral cache; neither belongs in the website's shared /state.
+services:
+  directory:
+    pids_limit: 128
+    ulimits:
+      core: {soft: 0, hard: 0}
+    environment:
+      H2_EOS_FRIEND_STORAGE: "1"
+      H2_EOS_FRIEND_STORAGE_CONFIG: /secrets/eos-friends.env
+      H2_EOS_FRIEND_CACHE_DIR: /run/halo2-friends
+    volumes:
+      - ${EOS_FRIEND_STORAGE_CONFIG:?Set EOS_FRIEND_STORAGE_CONFIG}:/secrets/eos-friends.env:ro
+    tmpfs:
+      - /run/halo2-friends:rw,noexec,nosuid,nodev,uid=10001,gid=10001,mode=0700,size=64m

@@ -14,6 +14,13 @@ public:
   void verify(rust::Str,rust::Str);
   Proof proof()const;
   std::int32_t poll();
+  void storage_login(rust::Str,rust::Str);
+  void storage_query();
+  void storage_clear_cache();
+  bool storage_missing()const;
+  void storage_read();
+  rust::String storage_value()const;
+  void storage_write(rust::Str);
 private:struct Impl;std::unique_ptr<Impl> impl_;
 };
 std::unique_ptr<Sdk> create(const Config&);

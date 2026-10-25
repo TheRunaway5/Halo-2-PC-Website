@@ -8,6 +8,93 @@ Sessions, P2P and the new room token/proof HTTP requests. Native adapters retain
 thread/message lifetime and existing game/UI ownership. Older account,
 Steam/Discord and matchmaking request paths still include C++ network I/O.
 
+## Custom friends in EOS Player Data Storage
+
+The scoped production backend and website API release is active as of October
+25, 2026. See [deployment scope and recovery](friends-deployed-rollout.md).
+Existing accounts receive tags on their next verified connection. A real-player
+EOS upload/download remains a separate acceptance check.
+
+The game-owned Friends implementation uses Steam authentication through the
+existing master OpenID issuer and EOS Connect. It does not require an Epic
+account or a Steamworks App ID. The master coordinates lookup, explicit consent
+and blocks, retaining its small SQLite ledger and transactional outbox; EOS
+stores encrypted, versioned private files. It does not remove the existing
+master service. See the game repository's `multiplayer/docs/friends.md` for
+identity, privacy, consistency and recovery boundaries.
+
+Create a dedicated **H2Forever Friend Storage** custom client/policy with
+**User required enabled** and only **Player Data Storage / `datastorage:access`**.
+Do not add PDS permission to the shipped game client or the profile publisher.
+This secret is held only by the master. No Epic Account Services permission or
+agreement change is needed. Portal client/permission changes require the user's
+approval; preparing these sources does not activate cloud storage.
+
+Copy [friends.env.example](config/friends.env.example) to a private path outside
+either repository, readable only by the master service owner. Fill the product,
+sandbox and deployment IDs matching the existing verified OpenID/PUID mapping,
+the dedicated client credentials, an absolute writable SDK cache path and a
+cryptographically random64-hex encryption key. Keep this key in private backups:
+changing or losing it prevents reads of existing encrypted records. Never put
+this config in the website API volume or a native/browser build.
+
+Build the worker and master image as described below, then use
+[compose.friends.example.yaml](compose.friends.example.yaml) as an opt-in
+override after the master EOS override. It mounts this config only in `directory`
+as `/secrets/eos-friends.env:ro` and provides a private64MiB temporary SDK cache
+at `/run/halo2-friends`. Keep that cache outside the shared website `/state`
+volume. Set `EOS_FRIEND_STORAGE_CONFIG` to the private file readable by the
+service's UID10001 on the deployment host. On POSIX the config must be a regular
+owner-only file (mode0400 or0600), without a final symlink. Its values are bounded
+to16KiB, exact storage keys and matching EOS identifiers. Inline identity/secret
+variables cannot override the storage config. Only the cache path can be
+overridden to a private operation-owned directory. The override also disables
+core dumps and limits the container to128 processes/threads. It adds:
+
+```yaml
+environment:
+  H2_EOS_FRIEND_STORAGE: "1"
+  H2_EOS_FRIEND_STORAGE_CONFIG: /secrets/eos-friends.env
+```
+
+The default is off. The master passes a120-second delegated OpenID token over a
+private pipe to an isolated `H2_EOS_WORKER_MODE=friends` process. Connect login
+must return the already verified bound PUID; no CreateUser or LinkAccount occurs.
+This headless process uses the SDK's user platform for User-required PDS access.
+It writes only `h2friends-v1.json`, bounded to32KiB/250 relationships. Normal
+publisher mode rejects friend operations; storage mode rejects publisher RPCs.
+The website bridge remains read-only and does not expose friends or sync files.
+The child receives only the SDK runtime environment and its dedicated config;
+Steam/publisher keys, master paths and preload hooks are excluded. Its temporary
+cache and HOME are removed after the process is reaped, including cancellation
+during spawn. No player tokens or private records enter shell arguments or logs.
+
+The adapter checks cloud owner/revision before upload, clears only the local SDK
+cache and downloads the exact file before acknowledging the outbox. Requests
+remain usable during cloud outages; failures back off, and an offline account
+without a verified PUID waits for its next connection. `GET /v1/friends` returns
+private `cloud.state` (`disabled`, `pending`, `synced`, `unavailable`) and revision
+counters for the authenticated owner. Never expose the full coordinator DB or
+these private files as a public website endpoint.
+
+Local validation covers the official SDK build and schema/revision guards plus
+real HTTP coordination/outbox tests using a fake cloud transport. An offline
+official-ABI fixture drives the actual C++ transfer callbacks through new writes,
+lost-reply replay, wrong/missing PUID, owner/revision conflict, oversized or
+malformed downloads, wrong callback user and changed read-back. The fixture
+never creates an EOS platform or accesses real player data.
+
+`validate.py --friend-config /private/eos-friends.env` additionally initializes a
+real SDK platform using the saved config and checks that a publisher operation
+is rejected. It verifies private-config loading and isolation, without logging
+credentials or reading/writing player files. The portal storage client has been
+created with the user's approval; production activation and a real account
+upload/download check remain required. Local test success does not prove live
+EOS storage. Keep one master
+writer per DB. A stale DB restore that conflicts with a newer cloud revision
+requires explicit reconciliation, rather than automatically replacing cloud
+records or importing client-controlled consent.
+
 ## Current status
 
 The latest qualified **uninstalled candidate** is
@@ -573,6 +660,7 @@ API image. For the master target, also provide the existing game backend source:
 ```
 docker buildx build --build-context eos-sdk=/private/EOS/SDK \
   --build-context master-source=/path/Halo-2-Decompiled/multiplayer/master_server \
+  --build-context master-rust=/path/Halo-2-Decompiled/rust \
   -f backend/eos-worker/Dockerfile --target master \
   -t halo2-master-eos:local .
 ```
@@ -612,6 +700,7 @@ For disposable deployment-image validation (Docker must be running):
 python3 /path/Halo-2-Decompiled/tools/run_test.py -- python3 \
   backend/eos-worker/validate_containers.py --sdk-archive /private/EOS-SDK.zip \
   --master-source /private/reviewed-master-source \
+  --master-rust /private/reviewed-game/rust \
   --report .local/validation/eos-containers.json
 ```
 

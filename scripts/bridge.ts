@@ -3,6 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { currentSkill, skillsAtMatch } from "./public-ranks.ts";
 import { eosEnvironment } from "./eos-service.ts";
 import { publicSteam } from "./public-steam.ts";
+import { createPublicFriendTag } from "./public-friend-tag.ts";
 import { statusService } from "./status-service.ts";
 import { RequestBudgets } from "./request-budgets.ts";
 import { createPlayerSearch } from "./player-search.ts";
@@ -16,6 +17,8 @@ const db = new DatabaseSync(
 );
 db.exec("PRAGMA query_only=ON; PRAGMA busy_timeout=3000;");
 const searchPlayers = createPlayerSearch(db);
+const friendTag = createPublicFriendTag(db);
+const publicIdentity = (id: string) => ({ ...publicSteam(db,id), ...friendTag(id) });
 const eos=eosEnvironment(db);
 eos?.start();
 const origins = new Set(
@@ -70,7 +73,7 @@ const server = createServer(async (req, res) => {
       if([...url.searchParams.keys()].some(k=>k!=="playlist")||url.searchParams.getAll("playlist").length!==1){reply(400,{error:"Choose one playlist"});return;}
       const board=eos?.top(url.searchParams.get("playlist")!);
       if (board) for (const player of board.players)
-        Object.assign(player, publicSteam(db, String(player.id)));
+        Object.assign(player, publicIdentity(String(player.id)));
       reply(board?200:503,board??{error:"EOS standings are not available yet"});return;
     }
     if (url.pathname === "/v1/website/status" && !url.search) {
@@ -85,13 +88,13 @@ const server = createServer(async (req, res) => {
       const name = displayNameQuery(url.searchParams.get("display_name")!);
       if (!name || [...url.searchParams.keys()].some((key) => key !== "display_name") ||
           url.searchParams.getAll("display_name").length !== 1) {
-        reply(400, { error: "Enter a display name using 1–64 characters" });
+        reply(400, { error: "Enter a display name or a full friend tag" });
         return;
       }
       const players = searchPlayers(name).map((player) => ({
         ...player,
         skill: currentSkill(db, String(player.id)),
-        ...publicSteam(db, String(player.id)),
+        ...publicIdentity(String(player.id)),
       }));
       reply(200, { players });
       return;
@@ -108,22 +111,22 @@ const server = createServer(async (req, res) => {
         if (url.pathname === "/v1/history/players")
           for (const player of data.players) {
             player.skill = currentSkill(db, player.id);
-            Object.assign(player, publicSteam(db, player.id));
+            Object.assign(player, publicIdentity(player.id));
           }
         else if(url.pathname.endsWith("/profile")) {
-          Object.assign(data, publicSteam(db, data.id));
+          Object.assign(data, publicIdentity(data.id));
           eos?.enrich(data);
         }
         else if (url.pathname.includes("/players/")) {
           data.player.skill = currentSkill(db, data.player.id);
-          Object.assign(data.player, publicSteam(db, data.player.id));
+          Object.assign(data.player, publicIdentity(data.player.id));
           eos?.enrich(data.player);
         }
         else {
           const ranks = skillsAtMatch(db, data.id);
           for (const player of data.players) {
             player.skill_at_match = ranks.get(player.id) ?? null;
-            Object.assign(player, publicSteam(db, player.id));
+            Object.assign(player, publicIdentity(player.id));
           }
         }
       }
