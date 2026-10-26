@@ -188,7 +188,11 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
           void main(){vec4 samples[4];runTextureStages(samples);
             outColor=runCombiners(samples,primaryColor,secondaryColor);
             ${pass.states[60] ? `if(!(${pass.states[58] === 513 ? `outColor.a<${((pass.states[61] ?? 0) / 255).toFixed(8)}` : `outColor.a>${((pass.states[61] ?? 0) / 255).toFixed(8)}`}))discard;` : ""}
-            ${pass.states[59] ? "" : "outColor.a=1.;"}
+            ${pass.states[59] ? "" : `
+            #ifndef H2_ACCUMULATION
+            outColor.a=1.;
+            #endif
+            `}
           }`;
         const base = pass.name.endsWith("default_texture_four_change_color_zwrite");
         const material = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, uniforms, vertexShader: `${vertexHeader}\n${vertexProgram}\nvoid main(){runVertexProgram();
@@ -211,6 +215,9 @@ export async function mountRetailModel(host: HTMLElement, appearance: ProfileApp
         model.add(mesh);
         if (base) {
           const baseMaterial = material.clone(); baseMaterial.uniforms = material.uniforms; materials.push(baseMaterial);
+          // The next Xbox pass reads this alpha as its reflection mask.
+          // Only the final canvas output uses alpha for page transparency.
+          if (appearance.species === "spartan") baseMaterial.defines = { ...baseMaterial.defines, H2_ACCUMULATION: 1 };
           baseModel.add(new THREE.Mesh(part, baseMaterial)); material.colorWrite = false;
         }
       }

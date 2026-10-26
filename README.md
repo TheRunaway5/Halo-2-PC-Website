@@ -62,6 +62,8 @@ Player profiles also show the saved player emblem and a Spartan or Elite model t
 
 To regenerate the requested profile assets from the owned game checkout, run `scripts/export-profile-assets.py` through that checkout's `tools/run_test.py`, passing `--game-root` and the absolute website `public/profile` directory as `--output`. No game caches or account databases are included in the static export.
 
+Spartan armor preserves the original color pass's alpha in the intermediate render target: the following Xbox lighting pass consumes it as the reflection mask. Only the final canvas output forces opaque armor alpha. Replacing that intermediate mask with full opacity makes the armor excessively reflective; the Elite rendering policy is unchanged.
+
 The game master now owns `/v1/online/status` and derives the compatibility health counter from the same activity. The old website source-patching helper and queue-only tests were removed. Public population contains aggregate counts only; neither account IDs nor online rosters are exposed. Deployment and rollback evidence belongs in ignored `.local/deploy/`; local implementation does not establish production rollout.
 
 ## Assets and content
