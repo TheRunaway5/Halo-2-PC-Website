@@ -8,6 +8,7 @@ function fixture(){
   db.exec(`CREATE TABLE match_results(id TEXT,playlist TEXT,ranked INTEGER);
     CREATE TABLE match_result_players(match TEXT,player TEXT,placement INTEGER,kills INTEGER,deaths INTEGER,assists INTEGER);
     CREATE TABLE carnage_weapon_stats(player TEXT,weapon INTEGER,field INTEGER,value INTEGER);
+    CREATE TABLE carnage_player_accuracy(match TEXT,player TEXT,shots INTEGER,hits INTEGER);
     CREATE TABLE player_profiles(player TEXT,screen_name TEXT,discord_username TEXT,joined_at INTEGER);
     CREATE TABLE player_customization(player TEXT,appearance BLOB,service_tag TEXT);
     CREATE TABLE history_players(player TEXT,public_id TEXT);
@@ -16,7 +17,8 @@ function fixture(){
     CREATE TABLE playlist_skill(player TEXT,playlist TEXT,configuration TEXT,raw_rank INTEGER,xp INTEGER);
     INSERT INTO match_results VALUES('m','slayer',1);
     INSERT INTO match_result_players VALUES('m','private-player',0,7,2,3);
-    INSERT INTO carnage_weapon_stats VALUES('private-player',5,4,20),('private-player',5,5,8),('private-player',0,4,999);
+    INSERT INTO carnage_weapon_stats VALUES('private-player',5,4,30000),('private-player',5,5,30000),('private-player',0,4,999);
+    INSERT INTO carnage_player_accuracy VALUES('m','private-player',20,8);
     INSERT INTO player_profiles VALUES('private-player','Pilot','pilot',1700000000);
     INSERT INTO player_customization VALUES('private-player',X'ff020304013f1f81a5','A117');
     INSERT INTO history_players VALUES('private-player','public-player');
@@ -50,6 +52,8 @@ test("read-back gates publication; retries stay absolute and EOS top25 never lea
     const before:any={id:"public-player",statistics:{kills:7}};service.enrich(before);assert.equal(before.statistics_source,undefined);
     observed=true;await service.refresh();assert.equal(ingest,2);
     const after:any={id:"public-player",statistics:{kills:7}};service.enrich(after);assert.equal(after.statistics_source,"eos");
+    const native:any={id:"public-player",statistics:{kills:7,shots:100,hits:1,accuracy_matches:2}};
+    service.enrich(native);assert.equal(native.statistics.shots,100);assert.equal(native.statistics.hits,1);
     await service.refresh();assert.equal(ingest,2);
     const board=service.top("slayer")!;assert.equal(board.players.length,1);assert.equal(board.players[0].position,1);
     assert.ok(!JSON.stringify(board).includes("private-player"));assert.ok(!JSON.stringify(board).includes("11111111111111111111111111111111"));

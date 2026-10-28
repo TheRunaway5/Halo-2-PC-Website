@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { date, label, ratio, reportLink } from "@/lib/api";
 import { joinedDate } from "@/lib/profile-appearance";
+import { shotAccuracy } from "@/lib/shot-accuracy";
+import { formatCount } from "@/lib/format-count";
 import type { MatchPage } from "@/lib/types";
 import { PlayerAppearance, PlayerEmblem } from "./player-appearance";
 import { RankBadge } from "./rank-badge";
@@ -18,6 +20,7 @@ export function PlayerServiceRecord({ history, loadingOlder, onLoadOlder }: {
   const { player, matches, next } = history;
   const joined = joinedDate(player.joined_at);
   const stats = player.statistics;
+  const accuracy = stats ? shotAccuracy(stats) : null;
   const ranked = player.skill && Number.isInteger(player.skill.level) && player.skill.level >= 1 && player.skill.level <= 50;
   return <>
     <div className="profile-wayfinding">
@@ -43,12 +46,14 @@ export function PlayerServiceRecord({ history, loadingOlder, onLoadOlder }: {
         <div className="panel-caption"><h2 id="career-title">CAREER STATISTICS</h2><span className="muted">{player.statistics_source === "eos" ? "ALL TIME" : "RECORDED RESULTS"}</span></div>
         {stats ? <>
           <dl>
-            <div><dt>Matches</dt><dd>{stats.matches.toLocaleString()}</dd></div>
-            <div><dt>Kills / Deaths</dt><dd>{stats.kills.toLocaleString()} <span>/</span> {stats.deaths.toLocaleString()}</dd></div>
+            <div><dt>Matches</dt><dd>{formatCount(stats.matches)}</dd></div>
+            <div><dt>Kills / Deaths</dt><dd>{formatCount(stats.kills)} <span>/</span> {formatCount(stats.deaths)}</dd></div>
             <div><dt>K/D</dt><dd>{ratio(stats.kills, stats.deaths)}</dd></div>
-            <div><dt>Shot accuracy</dt><dd>{stats.shots > 0 ? `${(100 * stats.hits / stats.shots).toFixed(1)}%` : "—"}</dd></div>
+            <div><dt>Shot accuracy</dt><dd>{accuracy!.tooltip ? <button type="button" className="profile-accuracy-value" aria-describedby="profile-accuracy-tooltip">
+              {accuracy!.value}<span role="tooltip" id="profile-accuracy-tooltip" className="profile-accuracy-tooltip">{accuracy!.tooltip}</span>
+            </button> : accuracy!.value}</dd>{!accuracy!.tooltip && <p className="profile-accuracy-note">No shot data recorded</p>}</div>
           </dl>
-          {!stats.accuracy_complete && <p className="profile-accuracy-note">Accuracy covers {stats.accuracy_matches} matches with detailed weapon data.</p>}
+          {accuracy!.coverage && <p className="profile-accuracy-note">{accuracy!.coverage}</p>}
         </> : <p className="profile-statistics-unavailable">No career statistics recorded yet.</p>}
       </section>
       <section className="profile-match-history" aria-labelledby="history-title">

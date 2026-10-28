@@ -65,10 +65,9 @@ export function profileStats(db: Database, player: string): Record<string, numbe
     FROM match_result_players WHERE player=?`).get(player)!;
   const stats: Record<string,number> = {};
   for(const [field,key] of Object.entries(counterNames)) if(field!=="shots" && field!=="hits") stats[key]=Number(row[field]);
-  const weapons = db.prepare(`SELECT field,SUM(value) AS value FROM carnage_weapon_stats WHERE player=?
-    AND weapon BETWEEN 5 AND 38 AND field IN (4,5) GROUP BY field`).all(player);
-  stats.H2_SHOTS=0;stats.H2_HITS=0;
-  for(const w of weapons)stats[Number(w.field)===4?"H2_SHOTS":"H2_HITS"]=Number(w.value);
+  const accuracy = db.prepare(`SELECT COALESCE(SUM(shots),0) AS shots,COALESCE(SUM(hits),0) AS hits
+    FROM carnage_player_accuracy WHERE player=?`).get(player)!;
+  stats.H2_SHOTS=Number(accuracy.shots);stats.H2_HITS=Number(accuracy.hits);
   const profile=db.prepare(`SELECT p.joined_at,c.appearance,c.service_tag FROM player_profiles p
     LEFT JOIN player_customization c ON c.player=p.player WHERE p.player=?`).get(player);
   if(profile?.joined_at!=null){const stamp=Number(profile.joined_at);stats.H2_JOINED_DAY=Math.floor(stamp/86400);stats.H2_JOINED_SECOND=stamp%86400;stats.H2_JOINED_KNOWN=1;}
@@ -167,7 +166,10 @@ export class EosService {
     const dirty=this.master.prepare("SELECT revision FROM eos_profile_outbox WHERE player=?").get(row.player);
     const sent=this.cache.prepare("SELECT revision FROM publication WHERE player=?").get(row.player);
     if(!dirty||!sent||Number(sent.revision)!==Number(dirty.revision))return;
-    if(player.statistics)for(const [field,key] of Object.entries(counterNames))player.statistics[field]=data[key];
+    // Coverage and accuracy always use the accepted native ledger. A cloud
+    // cache from an older projection must not overwrite its shot denominator.
+    if(player.statistics)for(const [field,key] of Object.entries(counterNames))
+      if(field!=="shots" && field!=="hits")player.statistics[field]=data[key];
     player.statistics_source="eos";player.statistics_updated_at=Number(cached.updated_at);
   }
   top(playlist: string){

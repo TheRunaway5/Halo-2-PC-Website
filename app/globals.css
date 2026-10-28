@@ -859,6 +859,11 @@ tbody tr:nth-child(even) {
 .profile-details dd { margin-top: 12px; font-size: clamp(19px, 1.8vw, 26px); line-height: 1.25; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .profile-details dd span { color: #7697b2; font-size: .65em; }
 .profile-accuracy-note { padding: 0 18px 18px; font-size: 10px; color: #809bb2; }
+.profile-accuracy-value { position: relative; border: 0; padding: 0; background: none; color: inherit; font: inherit; cursor: help; }
+.profile-accuracy-value:focus-visible { outline: 1px solid #8ccfeb; outline-offset: 5px; }
+.profile-details dd .profile-accuracy-tooltip { position: absolute; right: 0; bottom: calc(100% + 9px); z-index: 5; width: max-content; max-width: 210px; padding: 10px 12px; border: 1px solid #527891; background: #0b2031; color: #d4e6f2; font-size: 11px; line-height: 1.6; text-align: left; box-shadow: 0 6px 20px #0008; opacity: 0; visibility: hidden; }
+.profile-accuracy-tooltip::after { content: ""; position: absolute; top: 100%; left: 0; width: 100%; height: 10px; }
+.profile-accuracy-value:hover .profile-accuracy-tooltip, .profile-accuracy-value:focus-visible .profile-accuracy-tooltip { opacity: 1; visibility: visible; }
 .profile-statistics-unavailable { padding: 24px 20px; font-size: 13px; }
 .profile-match-history .empty-state { min-height: 235px; padding: 38px 24px; }
 .profile-match-history .empty-state h2 { font-size: 22px; margin-bottom: 12px; }
