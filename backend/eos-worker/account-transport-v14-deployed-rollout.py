@@ -12,6 +12,7 @@ import os
 import re
 import shlex
 import subprocess
+import stat
 import sys
 from pathlib import Path
 
@@ -34,10 +35,30 @@ FILES = [
 CHANGED = {"multiplayer/master_server/" + name for name in
            ("couch_players.py", "eos_identity.py", "match_transport.py")}
 PRIVATE = ["master-key.json", "eos-openid-key.pem", "admin-token", "peers.json"]
+MAX_REVIEW_BYTES = 1024 * 1024
+
+
+def reviewed_bytes(path):
+    """Authenticate and parse the same bounded regular-file descriptor."""
+    fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        before = os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode) and before.st_size <= MAX_REVIEW_BYTES and
+                before.st_uid in (0, os.getuid()) and not before.st_mode & 0o022,
+                "Untrusted qualification file identity, mode or size")
+        with os.fdopen(fd, "rb", closefd=False) as stream:
+            data = stream.read(MAX_REVIEW_BYTES + 1)
+        after = os.fstat(fd)
+        identity = lambda s: (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+        require(len(data) <= MAX_REVIEW_BYTES and identity(before) == identity(after),
+                "Qualification file changed during read")
+        return data
+    finally:
+        os.close(fd)
 
 
 def sha256(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(reviewed_bytes(path)).hexdigest()
 
 
 def require(condition, message):
@@ -119,9 +140,9 @@ def validate(metadata, parent):
 # Sent only when --execute is explicit. stdout is one sanitized JSON receipt.
 # Docker/SSH diagnostics are captured privately and are never echoed.
 REMOTE = r'''
-import datetime, fcntl, hashlib, json, os, secrets, signal, stat
-import subprocess, sys, time, urllib.request
-from pathlib import Path
+import datetime, fcntl, hashlib, json, os, secrets, signal, stat, re
+import subprocess, sys, time, urllib.request, tarfile, tempfile, threading
+from pathlib import Path, PurePosixPath
 
 m = json.load(sys.stdin)
 c = m['compose']; backup = m['backup']; container = c['container']
@@ -151,30 +172,98 @@ def inspect(ref, kind='container'):
 def iid(value):
     return value.removeprefix('sha256:')
 
-SOURCE = """
-import hashlib,json
-from pathlib import Path
-root=Path('/app'); out={}
-for p in (root/'multiplayer/master_server').rglob('*'):
-    if p.is_file() and not p.is_symlink() and '__pycache__' not in p.parts and p.suffix in {'.py','.json','.txt','.md'}:
-        out[str(p.relative_to(root))]=hashlib.sha256(p.read_bytes()).hexdigest()
-p=root/'requirements.txt'
-assert p.is_file() and not p.is_symlink()
-out['requirements.txt']=hashlib.sha256(p.read_bytes()).hexdigest()
-print(json.dumps(out,sort_keys=True))
-"""
+class BoundedTarInfo(tarfile.TarInfo):
+    def _proc_member(self, archive):
+        if self.type in (tarfile.GNUTYPE_LONGNAME,tarfile.GNUTYPE_LONGLINK,tarfile.XHDTYPE,tarfile.XGLTYPE) and self.size>65536:
+            fail('export-metadata-budget')
+        return super()._proc_member(archive)
 
-def source(ref, immutable=False):
-    argv = (['docker','run','--rm','--network','none','--read-only','--entrypoint','python3',ref]
-            if immutable else ['docker','exec',ref,'python3'])
-    return json.loads(run(argv+['-c',SOURCE]))
+class ExportReader:
+    def __init__(self, stream): self.stream=stream; self.bytes=0
+    def read(self, size):
+        if size<0 or size>1024*1024: fail('export-read-budget')
+        data=self.stream.read(size); self.bytes+=len(data)
+        if self.bytes>2*1024**3: fail('export-byte-budget')
+        return data
+
+def tar_manifest(stream):
+    result={}
+    with tarfile.open(fileobj=ExportReader(stream),mode='r|',tarinfo=BoundedTarInfo) as archive:
+        for item in archive:
+            path=PurePosixPath(item.name)
+            if path.is_absolute() or '..' in path.parts or len(item.name)>4096 or len(result)>=100000:
+                fail('export-path-budget')
+            name=str(path)
+            if name in result: fail('export-duplicate')
+            if item.size>128*1024**2 or item.size<0: fail('export-file-budget')
+            digest=None
+            if item.isfile():
+                h=hashlib.sha256()
+                with archive.extractfile(item) as inp:
+                    while block:=inp.read(1024*1024): h.update(block)
+                digest=h.hexdigest()
+            elif not (item.isdir() or item.issym() or item.islnk()):
+                fail('export-special-file')
+            result[name]=(item.type.decode('ascii'),item.mode,item.uid,item.gid,item.linkname,item.size,digest)
+    return result
+
+def filesystem(ref, immutable=False):
+    # Docker owns serialization; trusted host Python hashes without executing
+    # any interpreter, entrypoint, startup hook or binary from the subject.
+    created=None; process=None; timer=None
+    with tempfile.TemporaryFile() as errors:
+        try:
+            if immutable:
+                created=run(['docker','create','--network','none','--entrypoint','/bin/false',ref]).strip()
+                if not re.fullmatch('[0-9a-f]{64}',created): fail('export-container-id')
+            process=subprocess.Popen(['docker','export',created or ref],stdout=subprocess.PIPE,stderr=errors)
+            timer=threading.Timer(45,process.kill);timer.start()
+            result=tar_manifest(process.stdout)
+            if process.wait(timeout=45): fail('export-failed')
+            return result
+        finally:
+            if timer: timer.cancel()
+            if process:
+                if process.poll() is None: process.kill()
+                process.wait(timeout=5)
+                process.stdout.close()
+            if created: run(['docker','rm',created])
+
+def source_manifest(manifest):
+    out={}
+    for name,entry in manifest.items():
+        path=PurePosixPath(name)
+        if name=='app/requirements.txt' or (name.startswith('app/multiplayer/master_server/') and
+                '__pycache__' not in path.parts and path.suffix in {'.py','.json','.txt','.md'}):
+            if entry[0]!='0': fail('linked-source')
+            out[name.removeprefix('app/')]=entry[-1]
+    return out
+
+def source(ref): return source_manifest(filesystem(ref))
+
+def verify_rootfs(baseline,candidate,allowed):
+    dynamic={'etc/hostname','etc/hosts','etc/resolv.conf'}
+    changed={name for name in baseline.keys()|candidate.keys()
+             if name not in dynamic and baseline.get(name)!=candidate.get(name)}
+    if changed!={'app/'+name for name in allowed}: fail('unreviewed-rootfs-delta')
+
+trusted_filesystem=None; trusted_config=None
 
 def verify_image(entry):
+    global trusted_filesystem,trusted_config
     ref = 'sha256:'+iid(entry['image_id'])
     data = inspect(ref,'image')
     if iid(data['Id']) != iid(entry['image_id']): fail('image-id')
     if iid(inspect(entry['image_tag'],'image')['Id']) != iid(entry['image_id']): fail('image-tag')
-    if source(ref,True) != entry['source_sha256']: fail('immutable-source-manifest')
+    manifest=filesystem(ref,True)
+    if source_manifest(manifest) != entry['source_sha256']: fail('immutable-source-manifest')
+    config={k:v for k,v in data['Config'].items() if k not in ('Image','Hostname','Domainname','Labels')}
+    if iid(entry['image_id'])==iid(m['baseline']['image_id']):
+        trusted_filesystem=manifest; trusted_config=config
+    else:
+        if trusted_filesystem is None or config!=trusted_config: fail('image-runtime-config')
+        allowed={name for name,value in entry['source_sha256'].items() if m['baseline']['source_sha256'][name]!=value}
+        verify_rootfs(trusted_filesystem,manifest,allowed)
     return ref
 
 def verify_running(entry, original=False):
@@ -239,10 +328,12 @@ parent=dest.parent
 if parent.exists(): assert parent.is_dir() and not parent.is_symlink() and stat.S_IMODE(parent.stat().st_mode)==0o700
 else: parent.mkdir(mode=0o700)
 dest.mkdir(mode=0o700)
+key_digests={}
 for name in v['private_files']:
     p=state/name
     assert p.is_file() and not p.is_symlink() and stat.S_IMODE(p.stat().st_mode)==0o600
     data=p.read_bytes()
+    key_digests[name]=hashlib.sha256(data).hexdigest()
     fd=os.open(dest/name,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
     with os.fdopen(fd,'wb') as f: f.write(data); f.flush(); os.fsync(f.fileno())
     assert hashlib.sha256((dest/name).read_bytes()).digest()==hashlib.sha256(data).digest()
@@ -259,7 +350,7 @@ with sqlite3.connect('file:'+str(db)+'?mode=ro',uri=True,timeout=5) as src:
 with out.open('rb') as f: os.fsync(f.fileno())
 assert stat.S_IMODE(out.stat().st_mode)==0o600
 print(json.dumps({'consistent_sqlite':True,'private_files':len(v['private_files']),
- 'bytes':sum(p.stat().st_size for p in dest.iterdir())}))
+ 'bytes':sum(p.stat().st_size for p in dest.iterdir()),'key_digests':key_digests}))
 """
 
 CHECK_KEYS = """
@@ -270,17 +361,18 @@ for name in v['private_files']:
     a=root/name; b=dest/name
     assert a.is_file() and b.is_file() and not a.is_symlink() and not b.is_symlink()
     assert stat.S_IMODE(a.stat().st_mode)==stat.S_IMODE(b.stat().st_mode)==0o600
-    assert hashlib.sha256(a.read_bytes()).digest()==hashlib.sha256(b.read_bytes()).digest()
+    assert hashlib.sha256(a.read_bytes()).hexdigest()==v['key_digests'][name]
+    assert hashlib.sha256(b.read_bytes()).hexdigest()==v['key_digests'][name]
 print('{"unchanged":true}')
 """
 
-HEALTH = """
-import json,sys,urllib.request
-with urllib.request.urlopen(sys.argv[1],timeout=3) as r:
-    data=json.load(r)
-    assert r.status==200 and data.get('status')=='ok' and data.get('ready') is True
-print('ok')
-"""
+def trusted_state(script,payload,readonly=True):
+    # The already trusted baseline owns this isolated verifier, never candidate Python.
+    argv=['docker','run','--rm','-i','--network','none','--read-only','--cap-drop','ALL',
+          '--security-opt','no-new-privileges','--mount',
+          'type=volume,src='+backup['volume']+',dst=/state'+(',readonly' if readonly else ''),
+          '--entrypoint','python3',oldref,'-I','-c',script]
+    return run(argv,json.dumps(payload),timeout=40)
 
 def healthy(entry):
     deadline=time.monotonic()+50
@@ -288,13 +380,21 @@ def healthy(entry):
         try:
             data=verify_running(entry)
             if data['State'].get('Health',{}).get('Status')!='healthy': fail('docker-health')
-            run(['docker','exec',container,'python3','-c',HEALTH,m['health']['internal']],timeout=6)
+            networks=data['NetworkSettings']['Networks']
+            addresses=[v['IPAddress'] for v in networks.values() if v.get('IPAddress')]
+            if not addresses: fail('internal-address')
+            for address in addresses:
+                import ipaddress
+                address=str(ipaddress.IPv4Address(address))
+                with urllib.request.urlopen('http://'+address+':8080/v1/health',timeout=3) as r:
+                    value=json.load(r)
+                    if r.status!=200 or value.get('status')!='ok' or value.get('ready') is not True: fail('internal-health')
             with urllib.request.urlopen(m['health']['public'],timeout=3) as r:
                 payload=json.load(r)
                 if r.status!=200 or payload.get('status')!='ok' or payload.get('ready') is not True:
                     fail('public-health')
-            keydata={'destination':str(snapshot),'private_files':backup['private_files']}
-            run(['docker','exec','-i',container,'python3','-c',CHECK_KEYS],json.dumps(keydata))
+            keydata={'destination':str(snapshot),'private_files':backup['private_files'],'key_digests':key_digests}
+            trusted_state(CHECK_KEYS,keydata)
             check_compose(); check_resolved()
             if others()!=other_before: fail('other-container-changed')
             return
@@ -320,7 +420,11 @@ try:
     snapshot=Path(backup['destination_prefix'])/('account-v14-'+version)
     stage='backup'
     payload={'destination':str(snapshot),'private_files':backup['private_files']}
-    result=json.loads(run(['docker','exec','-i',container,'python3','-c',BACKUP],json.dumps(payload),timeout=40))
+    result=json.loads(trusted_state(BACKUP,payload,False))
+    # Keep reference hashes only in the trusted host process. The candidate
+    # can write its state volume, including the on-volume backup copies.
+    key_digests=result.pop('key_digests')
+    payload['key_digests']=key_digests
     report['backup']={'server_path':'/state/'+str(snapshot),**result}
     directory=Path('/opt/halo2')/('eos-account-v14-'+version); directory.mkdir(mode=0o700)
     override=directory/'compose.account-v14.json'; rollback=directory/'compose.rollback.json'
@@ -329,7 +433,7 @@ try:
     report['server_override']=str(override); report['server_rollback_override']=str(rollback)
     # Refuse a concurrent image/config/source replacement after the backup.
     verify_running(m['baseline'],True)
-    run(['docker','exec','-i',container,'python3','-c',CHECK_KEYS],json.dumps(payload))
+    trusted_state(CHECK_KEYS,payload)
     stage='candidate-up'; changed=True
     compose(override)
     stage='postflight'; healthy(m['candidate'])
@@ -368,11 +472,12 @@ def main():
     args = parser.parse_args()
     receipt_handle = None
     try:
-        metadata = json.loads(args.metadata.read_text())
-        digest = sha256(args.metadata)
-        validate(metadata, args.metadata.resolve().parent)
+        raw = reviewed_bytes(args.metadata)
+        digest = hashlib.sha256(raw).hexdigest()
         if args.metadata_sha256 is not None:
             require(args.metadata_sha256 == digest, "Reviewed metadata digest changed")
+        metadata = json.loads(raw)
+        validate(metadata, args.metadata.resolve().parent)
         if not args.execute:
             print(json.dumps({"mode": "plan", "remote_contacted": False, "metadata_sha256": digest,
                 "helper_sha256": sha256(Path(__file__)), "baseline_image": "sha256:" + BASELINE,

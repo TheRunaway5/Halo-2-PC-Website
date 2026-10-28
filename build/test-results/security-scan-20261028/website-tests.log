@@ -1,0 +1,39 @@
+npm notice run halo-2-forever-website@0.1.0 test
+npm notice run node --test tests/*.test.ts
+✔ HTTP bridge restricts methods and routes, isolates auth, and scopes CORS (112.137418ms)
+✔ publishes source appearance, immutable join date, absolute career and correct shot counters (1.834624ms)
+✔ read-back gates publication; retries stay absolute and EOS top25 never leaks PUID or private IDs (2.947935ms)
+✔ an invalid player's counters do not starve others and unchanged profiles refresh with queries (1.123159ms)
+✔ unmapped EOS qualification accounts do not consume the 25 public record slots (1.164348ms)
+✔ display-name queries preserve spaces, punctuation, Unicode and leading @ (0.857233ms)
+✔ friend-tag search disambiguates duplicate names and follows renames without writing tags (1.516339ms)
+✔ published display-name search is literal, case insensitive, bounded and independent of Discord (1.129752ms)
+✔ saved appearance bytes select the real species, four palette colors and emblem (1.118721ms)
+✔ join date preserves real registration dates and never invents a date for legacy accounts (10.968985ms)
+✔ profile asset set retains original mesh and bitmap provenance for both species and every emblem (37.818991ms)
+✔ spartan body emblem keeps the original draw program, colors and foreground toggle (9.536576ms)
+✔ elite body emblem keeps the original draw program, colors and foreground toggle (5.52286ms)
+✔ all 64 foregrounds retain their eight authored mips; page26 matches the original GPU upload (47.769285ms)
+✔ spartan stays centered on its actual rotation pivot and fits at every view angle (54.711609ms)
+✔ elite stays centered on its actual rotation pivot and fits at every view angle (28.26414ms)
+✔ Steam links follow the verified linked identity, independently of Halo and Discord names (1.544151ms)
+✔ public ranks use the literal 50-level display mapping and exclude unranked hidden skill (1.605939ms)
+✔ EOS refresh examines a bounded page and advances past fresh rows (12.846912ms)
+✔ a full bridge limiter releases expired identities at the reset boundary (10.393548ms)
+✔ bridge request limits survive capacity pressure and recover after expiry (0.148302ms)
+✔ all Pages workflow actions use immutable full commit references (0.42549ms)
+✔ population projection exposes aggregate fields only and validates partitions (1.566174ms)
+✔ status shares one fetch and keeps advertised occupancy separate from unique accounts (15.882765ms)
+✔ an older or malformed master reports unknown population instead of zero (0.815874ms)
+✔ six ring layers keep a fixed diameter while matching original rotation through one minute (2.279452ms)
+✔ browser animation preserves startup, rotation direction, diameter and full turns against the original oracle (1.412912ms)
+✔ menu tracks preserve their one-based IDs, original linear keys, focus timings and U velocities (0.676569ms)
+✔ production website image ships every module needed for display-name search (77.259269ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.051253

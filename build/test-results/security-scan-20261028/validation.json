@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "scan_revision": "7bbf11624daebff410a1541f54313aecf9fe12e3",
+  "website_tests": 29,
+  "python_security_tests": 7,
+  "typecheck": "passed",
+  "production_static_build": "passed",
+  "rollout_local_plan": "passed; no SSH",
+  "policy": "Public identity retained; block inference explicitly accepted",
+  "files": {
+    "README.md": "ed0e7badd163b3946fec5a23a65edecdfd9e13deeda0b409cd5ba6689f4017f1",
+    "backend/eos-worker/account-transport-v14-deployed-rollout.py": "392691bab94fafd1e0af848998863be120d8331c093b90ad7b7b336b7db7aeaa",
+    "backend/eos-worker/friends-deployed.patch": "87cab4072fca5473203fdfd0c13e2e559ee4173d691f077474310907ed0ce09f",
+    "backend/eos-worker/steam-social-and-remembered-login.patch": "87c8e46f9a8fc375882c9f0699d58f76198fe754385ae5782225d41c58ef8ca0",
+    "backend/eos-worker/tests/test_rollout_security.py": "0b8eac0bb9acdce3f3ec2127e2ae95cc58885a77c5ad132c6d9be5f5834f9938",
+    "backend/eos-worker/tests/test_social_overlay_security.py": "5b00d63724d896fcfe3b0c8140fb114bd1f9002dcbfc0997161701b361ef2b61",
+    "scripts/eos-service.ts": "33b2378832dc64fafecdb74ce8b0bf2d2229a201cdf08561f1325de5e2bc682a",
+    "tests/security-scan-20261028.test.ts": "1f806256efb7546f2c6fc037b20ec155506d460951d953e589c28d6ea2568f98"
+  },
+  "cloud_rescan": false,
+  "pushed": false,
+  "deployed": false
+}

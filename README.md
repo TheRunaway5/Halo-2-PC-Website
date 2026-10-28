@@ -39,7 +39,10 @@ retains the suffix, account ownership, friends, stats and EOS bindings. Profiles
 offer a copy button and searches accept either a partial display name or an exact
 full tag. Match and report headings retain plain display names. Unassigned legacy
 tags are omitted until the account reconnects. The website API remains read-only
-and publishes no friend lists or block preferences. Deploy the master migration
+and publishes no friend lists or block lists. Public identity search answers
+consistently across blocks. Unavailable friend, clan and party interactions may
+still make a block inferable; block status is not promised confidential. Presence
+and communication continue to enforce bilateral blocks. Deploy the master migration
 before restarting the website API; older databases remain readable without tags.
 
 Friendships use the existing master SQLite database and Steam authentication;

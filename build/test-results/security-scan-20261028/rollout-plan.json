@@ -1,0 +1,37 @@
+{
+  "mode": "plan",
+  "remote_contacted": false,
+  "metadata_sha256": "637373431460adb836f560093ac9691bd9878d87978d89ae07b3f49bbd4ad2ac",
+  "helper_sha256": "392691bab94fafd1e0af848998863be120d8331c093b90ad7b7b336b7db7aeaa",
+  "baseline_image": "sha256:ddd0682cecbdb2301936ef5cd291ffa6e70ca403fd68bb0dc22fb7489d545809",
+  "candidate_image": "sha256:98f5fe3e39664418ab365b14cef454cfd579b0c59a226ff2c038b58065a35fa4",
+  "source_count": 36,
+  "changed_sources": [
+    "multiplayer/master_server/couch_players.py",
+    "multiplayer/master_server/eos_identity.py",
+    "multiplayer/master_server/match_transport.py"
+  ],
+  "compose_files": [
+    "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production.yaml",
+    "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.production-matchmaking.yaml",
+    "/opt/halo2/releases/20261014T021753Z/multiplayer/master_server/compose.direct-release.yaml",
+    "/opt/halo2/website-api/compose.website-status.json",
+    "/opt/halo2/steam-import-20261016/compose.steam.json",
+    "/opt/halo2/eos-20261022T200436Z/compose.master.json",
+    "/opt/halo2/eos-transport-20261022T214749Z/compose.master.json",
+    "/opt/halo2/eos-profile-cache-20261022T235241Z/compose.master.json",
+    "/opt/halo2/eos-career-indexes-20261023T000037Z/compose.master.json",
+    "/opt/halo2/eos-social-20261023T031806Z/compose.social.json",
+    "/opt/halo2/eos-social-capacity-20261023T040824Z/compose.capacity.json"
+  ],
+  "service": "directory",
+  "database_restored_on_rollback": false,
+  "steps": [
+    "authenticate running owner, image, ordered compose files and source36",
+    "authenticate both immutable local images and candidate source36",
+    "private SQLite backup and four private key copies on existing server volume",
+    "directory-only candidate up: --no-deps --no-build --pull never",
+    "verify exact sources, state/key preservation, Docker/internal/public health",
+    "on failure: directory-only original image rollback; preserve database writes"
+  ]
+}

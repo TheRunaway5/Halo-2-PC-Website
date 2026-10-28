@@ -91,7 +91,7 @@ export class EosService {
   private timer?: NodeJS.Timeout;
   private active=false;
   private closed=false;
-  private cursor=0;
+  private cursor="";
   readonly boards: Board[];
   private master: Database;
   constructor(master: Database, binary: string, state: string, boards: Board[], worker?: Pick<EosWorker,"request"|"close">) {
@@ -107,18 +107,19 @@ export class EosService {
   async refresh(){
     if(this.active||this.closed)return;this.active=true;
     try {
-      const rows=this.master.prepare(`SELECT o.player,o.revision,e.puid,h.public_id FROM eos_profile_outbox o
-        JOIN eos_players e ON e.player=o.player JOIN history_players h ON h.player=o.player ORDER BY o.player`).all();
+      const page=()=>this.master.prepare(`SELECT o.player,o.revision,e.puid,h.public_id FROM eos_profile_outbox o
+        JOIN eos_players e ON e.player=o.player JOIN history_players h ON h.player=o.player WHERE o.player>? ORDER BY o.player LIMIT 32`).all(this.cursor);
+      let rows=page();
+      if(!rows.length){this.cursor="";rows=page();}
       let published=0;
-      const start=this.cursor;
-      for(let offset=0;offset<rows.length && !this.closed;offset++){
-        const index=(start+offset)%rows.length;
-        const row=rows[index];
+      for(const row of rows){
+        if(this.closed || published>=4)break;
+        this.cursor=String(row.player);
         const old=this.cache.prepare("SELECT revision FROM publication WHERE player=?").get(row.player);
         const cached=this.cache.prepare("SELECT updated_at FROM stats WHERE player=?").get(row.player);
         const current=old && Number(old.revision)===Number(row.revision);
         if(current && cached && Number(cached.updated_at)>Date.now()/1000-300)continue;
-        if(published++>=4)break;
+        ++published;
         try {
         this.master.exec("BEGIN");
         let stats: Record<string,number>;
@@ -142,7 +143,6 @@ export class EosService {
         this.cache.prepare("INSERT OR REPLACE INTO stats VALUES(?,?,?)").run(row.player,JSON.stringify(reply.stats),Math.floor(Date.now()/1000));
         this.cache.prepare("INSERT OR REPLACE INTO publication VALUES(?,?)").run(row.player,row.revision);
         }catch { /* A failing player must not starve the rest of the queue. */ }
-        finally { this.cursor=(index+1)%rows.length; }
       }
       for(const board of this.boards){
         if(this.closed)break;

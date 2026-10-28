@@ -1,0 +1,890 @@
+{
+  "documentType": "codex-security.findings",
+  "findings": [
+    {
+      "attackPath": {
+        "controls": [
+          "Exact image ID/tag, reviewed metadata digest, strict SSH host checking, network-disabled immutable check, read-only temporary check container, backup, and rollback."
+        ],
+        "dataflow": {
+          "evidenceRefs": [
+            "candidate-source-self-check",
+            "candidate-postflight-self-check"
+          ],
+          "outcome": "Unreviewed code remains deployed with production state and secrets.",
+          "sink": "Source identity, health, and protected-file attestation decisions in the remote rollout.",
+          "source": "Operator-selected candidate image and its Python startup environment.",
+          "summary": "Candidate-controlled interpreter output crosses the rollout trust boundary and authorizes production retention.",
+          "transformations": [
+            "docker run/exec candidate python3",
+            "parse candidate JSON/text",
+            "compare to reviewed values"
+          ]
+        },
+        "evidenceRefs": [
+          "candidate-source-self-check",
+          "candidate-postflight-self-check"
+        ],
+        "impact": {
+          "level": "high",
+          "rationale": "The directory service mounts the authoritative registry and private credentials; malicious service code can read or alter them and impersonate backend authority."
+        },
+        "likelihood": {
+          "level": "high",
+          "rationale": "Once an attacker-influenced candidate is selected, no independent verifier prevents deterministic output forgery."
+        },
+        "preconditions": [
+          "The attacker can influence the exact candidate artifact or one of its root-installed dependencies.",
+          "An authorized operator selects that artifact and runs `--execute`."
+        ],
+        "reachability": {
+          "attacker": "Candidate image/dependency supplier.",
+          "entrypoint": "`account-transport-v14-deployed-rollout.py --execute`",
+          "evidenceRefs": [
+            "candidate-source-self-check",
+            "candidate-postflight-self-check"
+          ],
+          "outcome": "Production code execution and concealment of state access/modification.",
+          "preconditions": [
+            "Candidate influence",
+            "authorized operator execution"
+          ],
+          "sink": "Production directory replacement and successful postflight.",
+          "source": "Candidate image interpreter.",
+          "summary": "The path is reached whenever the explicit directory rollout evaluates an attacker-influenced candidate."
+        },
+        "steps": [
+          "A supplier or compromised build dependency modifies the candidate interpreter/startup environment while preserving plausible application source.",
+          "The operator invokes the explicit rollout for the pinned candidate.",
+          "Candidate Python prints the expected manifest during immutable and running checks.",
+          "After replacement, candidate Python reports health and protected files unchanged.",
+          "The malicious image remains active with access to production directory state and credentials."
+        ],
+        "summary": "A malicious candidate artifact forges the checks that are supposed to bind it to reviewed source, then runs as the production directory service."
+      },
+      "codeEvidence": [
+        {
+          "code": "def source(ref, immutable=False):\n    argv = (['docker','run','--rm','--network','none','--read-only','--entrypoint','python3',ref]\n            if immutable else ['docker','exec',ref,'python3'])\n    return json.loads(run(argv+['-c',SOURCE]))\n\ndef verify_image(entry):\n    ref = 'sha256:'+iid(entry['image_id'])\n    data = inspect(ref,'image')\n    if iid(data['Id']) != iid(entry['image_id']): fail('image-id')\n    if iid(inspect(entry['image_tag'],'image')['Id']) != iid(entry['image_id']): fail('image-tag')\n    if source(ref,True) != entry['source_sha256']: fail('immutable-source-manifest')",
+          "endLine": 178,
+          "explanation": "The verifier does not inspect candidate filesystem bytes using trusted host code; it asks candidate-provided Python to report them.",
+          "id": "candidate-source-self-check",
+          "label": "Candidate interpreter produces its own source manifest",
+          "language": "python",
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "root_control",
+          "startLine": 167
+        },
+        {
+          "code": "def healthy(entry):\n    deadline=time.monotonic()+50\n    while True:\n        try:\n            data=verify_running(entry)\n            if data['State'].get('Health',{}).get('Status')!='healthy': fail('docker-health')\n            run(['docker','exec',container,'python3','-c',HEALTH,m['health']['internal']],timeout=6)\n            ...\n            keydata={'destination':str(snapshot),'private_files':backup['private_files']}\n            run(['docker','exec','-i',container,'python3','-c',CHECK_KEYS],json.dumps(keydata))",
+          "endLine": 298,
+          "explanation": "After the candidate is running with production mounts, its own interpreter supplies both health and key-preservation evidence.",
+          "id": "candidate-postflight-self-check",
+          "label": "Candidate interpreter attests protected files after deployment",
+          "language": "python",
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "sensitive_operation",
+          "startLine": 285
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "Direct source review shows every immutable/running source check and the postflight key comparison invoke `python3` inside the image/container and trust its output."
+      },
+      "findingId": "csf_a30e824ef03dd35a71532dc9",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:0eb675d24a56f48b4781f3ff827a0b89a4fa681e44d602d3ae9b47b6b92cc114"
+      },
+      "identity": {
+        "anchor": "candidate-image-python-self-attestation"
+      },
+      "locations": [
+        {
+          "endLine": 178,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "root_control",
+          "startLine": 167
+        },
+        {
+          "endLine": 198,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "running-image attestation",
+          "startLine": 180
+        },
+        {
+          "endLine": 298,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "post-deployment protected-state check",
+          "startLine": 285
+        }
+      ],
+      "occurrenceId": "occ_253390df33f402f73b4efca4",
+      "preventiveControls": [
+        "Trusted out-of-artifact filesystem hashing.",
+        "Signed provenance/SBOM verification and independent postflight helper."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Inspect and hash the candidate filesystem with trusted host-side code that never executes candidate binaries (for example, export/create the filesystem into an owned directory and hash bounded regular files). Verify signed image provenance and required image configuration independently. Perform key-preservation and internal-health checks from a trusted helper or host process with narrowly scoped read-only access, not from the deployed candidate.",
+      "remediationTests": [
+        "Build a candidate whose `/usr/bin/python3` always prints the expected manifest; independent verification must reject it.",
+        "Add a startup hook that falsifies the key-comparison output; postflight must detect the mismatch from outside the candidate."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "candidate-source-self-check",
+          "candidate-postflight-self-check"
+        ],
+        "summary": "The artifact being authenticated owns the interpreter and startup environment used to perform authentication, so the verifier and subject are not independent."
+      },
+      "ruleId": "supply-chain.untrusted-artifact-self-attestation",
+      "severity": {
+        "level": "high",
+        "rationale": "Given control of the candidate artifact, exploitation is reliable and crosses from supplier/build influence to production directory-service code execution with access to the registry and server credentials. The workflow is operator initiated and image-pinned, but the claimed attestation is the control intended to prevent this artifact substitution."
+      },
+      "summary": "The privileged rollout authenticates an operator-selected candidate image and verifies protected state by executing Python from that same candidate. A malicious image or dependency can alter interpreter startup, print the expected source manifest, and report private files unchanged before receiving the production service's mounts.",
+      "taxonomy": {
+        "category": "supply-chain-integrity",
+        "cwe": [
+          "CWE-345"
+        ]
+      },
+      "title": "Candidate-controlled Python can forge image and post-deployment attestations",
+      "validation": {
+        "assertions": [
+          "Immutable image verification invokes the image's own `python3`.",
+          "Running source, internal health, and private-file comparisons invoke the deployed container's own `python3`.",
+          "Successful attestation permits the candidate to remain deployed with production mounts."
+        ],
+        "counterEvidence": [
+          "Image IDs and tags are pinned, source filenames/digests are supplied in reviewed metadata, and immutable inspection is network-disabled/read-only.",
+          "These controls limit artifact replacement and verifier side effects but do not make candidate-produced output trustworthy."
+        ],
+        "disposition": "reportable",
+        "evidenceRefs": [
+          "candidate-source-self-check",
+          "candidate-postflight-self-check"
+        ],
+        "limitations": [
+          "Execution is conditional on an operator selecting and explicitly deploying a candidate image; no live deployment was tested."
+        ],
+        "method": "Static source-to-sink review of the rollout verifier, candidate image execution, and production postflight.",
+        "status": "validated",
+        "summary": "A candidate can replace `python3`, use Python startup hooks, or otherwise falsify the JSON/text that the trusted remote helper treats as source, health, and key-preservation evidence."
+      }
+    },
+    {
+      "attackPath": {
+        "controls": [
+          "Explicit execution flag",
+          "reviewed digest",
+          "strict SSH host key",
+          "schema and remote baseline checks"
+        ],
+        "dataflow": {
+          "evidenceRefs": [
+            "metadata-double-open",
+            "parsed-metadata-sent"
+          ],
+          "outcome": "Deployment of metadata bytes the operator did not review.",
+          "sink": "Privileged remote rollout JSON on SSH stdin.",
+          "source": "Locally swappable metadata pathname.",
+          "summary": "Two versions of one pathname feed separate parse and authorization operations.",
+          "transformations": [
+            "first path open to JSON object",
+            "second path open to digest",
+            "serialize first object"
+          ]
+        },
+        "evidenceRefs": [
+          "metadata-double-open",
+          "parsed-metadata-sent"
+        ],
+        "impact": {
+          "level": "high",
+          "rationale": "An unreviewed directory image can obtain the production service's state and credential mounts."
+        },
+        "likelihood": {
+          "level": "medium",
+          "rationale": "Path swaps can be synchronized with file access, but the attacker also needs a valid object and remotely present image."
+        },
+        "preconditions": [
+          "Local path replacement capability during operator execution.",
+          "A schema-valid malicious object referencing an acceptable image/configuration available to the remote helper."
+        ],
+        "reachability": {
+          "attacker": "Lower-privileged local user with metadata-path write/swap access.",
+          "entrypoint": "Operator invocation with `--metadata`.",
+          "evidenceRefs": [
+            "metadata-double-open",
+            "parsed-metadata-sent"
+          ],
+          "outcome": "Unreviewed candidate selection and production replacement.",
+          "preconditions": [
+            "Local path control",
+            "authorized execution",
+            "acceptable remote candidate"
+          ],
+          "sink": "Remote rollout input.",
+          "source": "Metadata pathname.",
+          "summary": "The race occurs before any remote contact in every plan/execute invocation."
+        },
+        "steps": [
+          "Place a schema-valid malicious metadata file at the selected path.",
+          "Allow the rollout's first open to parse it.",
+          "Atomically replace the path with reviewed benign bytes before the second open.",
+          "The benign digest passes while the malicious in-memory object is sent over SSH."
+        ],
+        "summary": "A local attacker races the metadata pathname so malicious parsed fields are authorized by the digest of the benign reviewed file."
+      },
+      "codeEvidence": [
+        {
+          "code": "metadata = json.loads(args.metadata.read_text())\ndigest = sha256(args.metadata)\nvalidate(metadata, args.metadata.resolve().parent)\nif args.metadata_sha256 is not None:\n    require(args.metadata_sha256 == digest, \"Reviewed metadata digest changed\")",
+          "endLine": 375,
+          "explanation": "`read_text()` and `sha256(...read_bytes())` do not bind the parsed object and reviewed digest to one descriptor or byte string.",
+          "id": "metadata-double-open",
+          "label": "Metadata is parsed and hashed through separate opens",
+          "language": "python",
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "root_control",
+          "startLine": 371
+        },
+        {
+          "code": "command = [\"ssh\", \"-o\", \"BatchMode=yes\", \"-o\", \"ConnectTimeout=7\", \"-o\",\n           \"StrictHostKeyChecking=yes\", \"halo2-master\", \"python3 -c \" + shlex.quote(REMOTE)]\nresult = subprocess.run(command, input=json.dumps(metadata), text=True,\n                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)",
+          "endLine": 404,
+          "explanation": "Digest validation does not reparse the hashed bytes; the potentially different object from the first open controls remote deployment.",
+          "id": "parsed-metadata-sent",
+          "label": "The first parsed object is sent to the privileged remote helper",
+          "language": "python",
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "sensitive_operation",
+          "startLine": 399
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "The two independent pathname reads and later serialization of the first parsed object are explicit in source."
+      },
+      "findingId": "csf_d8235f8cd06cdc8b6e2e2471",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:0aef60a50e49d51623ce9974479400b27a12625a873700a81376d505d6f88d26"
+      },
+      "identity": {
+        "anchor": "rollout-metadata-read-hash-race"
+      },
+      "locations": [
+        {
+          "endLine": 40,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "digest helper",
+          "startLine": 39
+        },
+        {
+          "endLine": 375,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "root_control",
+          "startLine": 371
+        },
+        {
+          "endLine": 404,
+          "path": "backend/eos-worker/account-transport-v14-deployed-rollout.py",
+          "role": "sensitive_operation",
+          "startLine": 399
+        }
+      ],
+      "occurrenceId": "occ_28de1ccc553a89e24731cc3b",
+      "preventiveControls": [
+        "Single-descriptor digest-and-parse helper for reviewed artifacts."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Open metadata once, reject symlinks where supported, verify regular-file ownership/mode and a size bound with `fstat`, read one byte string, compare its digest, and parse exactly those bytes. Apply the same single-descriptor pattern to qualification artifacts whose hashes authorize deployment.",
+      "remediationTests": [
+        "Swap the metadata pathname between read events and verify execution either uses one immutable byte buffer or fails.",
+        "Verify symlink, non-regular, oversized, and unexpectedly owned metadata files are rejected before SSH."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "metadata-double-open",
+          "parsed-metadata-sent"
+        ],
+        "summary": "The code verifies a pathname at two times instead of hashing and parsing the same bounded byte buffer from one trusted descriptor."
+      },
+      "ruleId": "race-condition.reviewed-metadata-binding",
+      "severity": {
+        "level": "medium",
+        "rationale": "Successful exploitation can select an unreviewed production image and configuration, but requires local pathname replacement, a race, authorized operator interaction, and a usable referenced image already present on the remote host."
+      },
+      "summary": "The rollout parses its metadata path and then reopens that path to calculate the reviewed digest. A local principal able to swap the pathname between opens can make the parsed object malicious while the second read matches the operator-reviewed digest.",
+      "taxonomy": {
+        "category": "race-condition",
+        "cwe": [
+          "CWE-367"
+        ]
+      },
+      "title": "Rollout hashes different metadata bytes than it deploys",
+      "validation": {
+        "assertions": [
+          "Parsing and hashing perform separate path opens.",
+          "Digest comparison validates only the second read.",
+          "The object from the first read is serialized to SSH."
+        ],
+        "counterEvidence": [
+          "Execution requires `--execute`, an exact digest, strict SSH host checking, and extensive schema/remote validation.",
+          "Those controls constrain the substituted object but do not bind it to the reviewed bytes."
+        ],
+        "disposition": "reportable",
+        "evidenceRefs": [
+          "metadata-double-open",
+          "parsed-metadata-sent"
+        ],
+        "limitations": [
+          "A practical attack needs write/swap control over the selected metadata path and a remotely available image satisfying the remaining validation constraints."
+        ],
+        "method": "Static TOCTOU trace from local metadata reads to the SSH payload.",
+        "status": "validated",
+        "summary": "A pathname swap after parsing but before hashing lets reviewed bytes differ from the object that is validated and serialized."
+      }
+    },
+    {
+      "attackPath": {
+        "controls": [
+          "Authentication",
+          "Steam friendship requirement",
+          "legacy party-block filter",
+          "rate limit",
+          "coarse Boolean presence"
+        ],
+        "dataflow": {
+          "evidenceRefs": [
+            "bilateral-friend-block",
+            "steam-presence-legacy-filter"
+          ],
+          "outcome": "Presence tracking across an explicit bilateral block.",
+          "sink": "`halo_online` in `/v1/account/steam-friends` JSON.",
+          "source": "Authenticated caller identity, Steam friend list, and internal presence map.",
+          "summary": "Internal player presence is joined to Steam subjects and disclosed after the wrong authorization table is consulted.",
+          "transformations": [
+            "Steam subject to private player lookup",
+            "legacy party-block query",
+            "presence Boolean projection"
+          ]
+        },
+        "evidenceRefs": [
+          "bilateral-friend-block",
+          "steam-presence-legacy-filter"
+        ],
+        "impact": {
+          "level": "medium",
+          "rationale": "Ongoing presence tracking can undermine a safety block and facilitate harassment, although no precise activity or location is disclosed."
+        },
+        "likelihood": {
+          "level": "high",
+          "rationale": "Once the relationship preconditions hold, one authenticated request deterministically reveals the Boolean and can be repeated."
+        },
+        "preconditions": [
+          "Authenticated Halo account",
+          "linked Steam identity",
+          "remaining Steam friendship",
+          "target online"
+        ],
+        "reachability": {
+          "attacker": "Blocked Halo player who remains the target's Steam friend.",
+          "entrypoint": "GET `/v1/account/steam-friends`.",
+          "evidenceRefs": [
+            "bilateral-friend-block",
+            "steam-presence-legacy-filter"
+          ],
+          "outcome": "Blocked target's coarse online state is observable.",
+          "preconditions": [
+            "Active friend deployment",
+            "Steam linkage/friendship"
+          ],
+          "sink": "`halo_online` response property.",
+          "source": "Steam friend list and server presence map.",
+          "summary": "The route remains registered alongside the active new friend service and the endpoint is directly callable by authenticated accounts."
+        },
+        "steps": [
+          "Target blocks attacker through the new Halo friend command.",
+          "The Steam friendship remains.",
+          "Attacker calls `/v1/account/steam-friends` with an authenticated session.",
+          "Legacy `party_blocks` lookup misses the new block and `halo_online` reflects internal presence."
+        ],
+        "summary": "A blocked linked-Steam friend calls the sibling Steam social endpoint and receives the blocked player's live Halo presence."
+      },
+      "codeEvidence": [
+        {
+          "code": "+        CREATE TABLE IF NOT EXISTS player_friend_blocks(\n+          player TEXT NOT NULL REFERENCES players(id), target TEXT NOT NULL REFERENCES players(id),\n+          CHECK(player!=target), PRIMARY KEY(player,target));\n...\n+    def blocked(self, a, b):\n+        return (a,b) in self.blocks or (b,a) in self.blocks",
+          "endLine": 356,
+          "explanation": "The deployed friend control treats either direction as blocked and persists it separately from legacy party blocks.",
+          "id": "bilateral-friend-block",
+          "label": "Active friend blocks use a new bilateral table",
+          "language": "diff/python",
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "authorization state",
+          "startLine": 342
+        },
+        {
+          "code": "+    async def get(self, request):\n+        self.directory.rate(\"steam-friends:\"+self.directory.source(request),30)\n+        _,who=self.directory.clans.session(request)\n+        result=await self.lookup(who)\n+        from .player_presence import observed\n+        present=observed(self.directory); db=self.directory.store.db\n+        friends=[]\n+        for row in result[\"friends\"]:\n+            target=db.execute(\"SELECT player FROM player_identities WHERE provider='steam' AND subject=?\",(row[\"id\"],)).fetchone()\n+            if target and db.execute(\"SELECT 1 FROM party_blocks WHERE (player=? AND inviter=?) OR (player=? AND inviter=?)\",(target[0],who,who,target[0])).fetchone(): continue\n+            friends.append({**row,\"registered\":bool(target),\"halo_online\":bool(target and target[0] in present)})",
+          "endLine": 240,
+          "explanation": "The endpoint is authenticated but never consults `directory.friends.blocked`, so new bilateral blocks do not suppress presence.",
+          "id": "steam-presence-legacy-filter",
+          "label": "Steam friends checks only party_blocks before disclosing presence",
+          "language": "diff/python",
+          "path": "backend/eos-worker/steam-social-and-remembered-login.patch",
+          "role": "sensitive_operation",
+          "startLine": 229
+        }
+      ],
+      "confidence": {
+        "level": "high",
+        "rationale": "The active deployment manifest binds both reconstructed patched files by exact SHA-256, and the source trace shows the new block write and legacy-only read with no intervening bilateral check."
+      },
+      "findingId": "csf_4c25627d1fe9cbfe685ec917",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:4a3529570c09dfd6492cc6f8b4b9d8d5b687dca75e378c3d34749c23c9c40723"
+      },
+      "identity": {
+        "anchor": "steam-friends-presence-ignores-halo-block"
+      },
+      "locations": [
+        {
+          "endLine": 356,
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "authorization state",
+          "startLine": 342
+        },
+        {
+          "endLine": 440,
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "block mutation",
+          "startLine": 433
+        },
+        {
+          "endLine": 240,
+          "path": "backend/eos-worker/steam-social-and-remembered-login.patch",
+          "role": "sink",
+          "startLine": 229
+        }
+      ],
+      "occurrenceId": "occ_9d5cf11b1ff7a5247e4876c9",
+      "preventiveControls": [
+        "Centralize all cross-social visibility decisions behind the authoritative bilateral block helper."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Before returning a registered target or Halo presence, apply `self.directory.friends.blocked(who, target[0])`. Prefer omitting blocked targets entirely; at minimum redact registration and force `halo_online` false. Add regression tests for both block directions, including cached Steam responses.",
+      "remediationTests": [
+        "Block A\u2192B and B\u2192A independently; each caller's Steam-friends response must omit or redact the other.",
+        "Prime the Steam lookup cache before blocking and verify the next endpoint response still enforces the new block."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "bilateral-friend-block",
+          "steam-presence-legacy-filter"
+        ],
+        "summary": "A sibling authenticated social endpoint retained a legacy block table after the authoritative friend-block mechanism moved to `player_friend_blocks`."
+      },
+      "ruleId": "broken-access-control.social-block-presence",
+      "severity": {
+        "level": "medium",
+        "rationale": "The disclosure is coarse but defeats an explicit bilateral safety control and supports repeated presence tracking after a block. Exploitation is easy for an authenticated, linked Steam friend, though it requires the Steam relationship to remain in place."
+      },
+      "summary": "The active friends implementation stores bilateral Halo blocks in `player_friend_blocks`, but the authenticated Steam-friends endpoint filters only legacy `party_blocks` before returning registration and live Halo presence. A blocked Steam friend can continue polling the target's online state.",
+      "taxonomy": {
+        "category": "broken-access-control",
+        "cwe": [
+          "CWE-862"
+        ]
+      },
+      "title": "Steam friends endpoint bypasses bilateral Halo blocks",
+      "validation": {
+        "assertions": [
+          "Friend blocks are bilateral.",
+          "The block command inserts `player_friend_blocks` and does not insert `party_blocks`.",
+          "The Steam endpoint returns `halo_online` without checking the authoritative bilateral predicate."
+        ],
+        "counterEvidence": [
+          "The caller must authenticate, link Steam, remain a Steam friend of the target, and is rate-limited.",
+          "Legacy party blocks are still filtered and Steam lookup results are cached for 60 seconds."
+        ],
+        "disposition": "reportable",
+        "evidenceRefs": [
+          "bilateral-friend-block",
+          "steam-presence-legacy-filter"
+        ],
+        "limitations": [
+          "The complete external master is absent, but the active manifest's exact file digests match the patched `steam_friends.py` and `friends_http.py` content."
+        ],
+        "method": "Static cross-patch authorization comparison with active-manifest hash validation.",
+        "status": "validated",
+        "summary": "The block command writes only the new friend-block table, while Steam friend presence reads only legacy party blocks."
+      }
+    },
+    {
+      "attackPath": {
+        "controls": [
+          "One row per immutable player/PUID binding",
+          "four SDK attempts per pass",
+          "non-overlap flag",
+          "128 MiB/0.5 CPU container cap"
+        ],
+        "dataflow": {
+          "evidenceRefs": [
+            "unbounded-outbox-materialization",
+            "shared-sync-api-process"
+          ],
+          "outcome": "Repeated public API latency, memory pressure, or process restart.",
+          "sink": "Unbounded `.all()` plus per-row `DatabaseSync` cache reads in the public Node process.",
+          "source": "Accepted `eos_profile_outbox` and `eos_players` rows.",
+          "summary": "Attacker-influenced durable account population controls collection cardinality at a synchronous allocation/query sink.",
+          "transformations": [
+            "full joined query",
+            "array materialization",
+            "two cache queries per row"
+          ]
+        },
+        "evidenceRefs": [
+          "unbounded-outbox-materialization",
+          "shared-sync-api-process"
+        ],
+        "impact": {
+          "level": "medium",
+          "rationale": "Availability of the website API can degrade or fail, while the authoritative master service remains separate."
+        },
+        "likelihood": {
+          "level": "medium",
+          "rationale": "The work grows deterministically, but the exploitable population threshold and account acquisition cost are unknown."
+        },
+        "preconditions": [
+          "EOS publication enabled",
+          "large accepted bound-account population"
+        ],
+        "reachability": {
+          "attacker": "Authenticated party capable of establishing many accepted EOS-bound accounts; organic growth has the same effect.",
+          "entrypoint": "Room-bound EOS proof and resulting publication outbox.",
+          "evidenceRefs": [
+            "unbounded-outbox-materialization",
+            "shared-sync-api-process"
+          ],
+          "outcome": "Public API denial or degradation.",
+          "preconditions": [
+            "Optional EOS deployment active",
+            "large population"
+          ],
+          "sink": "Scheduled refresh in the bridge process.",
+          "source": "Durable accepted binding population.",
+          "summary": "The reconciler starts automatically whenever EOS worker/cache environment is configured."
+        },
+        "steps": [
+          "Many authenticated player identities complete EOS binding and acquire outbox rows.",
+          "Rows become current/fresh after publication.",
+          "Each 15-second refresh materializes the entire join and performs two cache reads per row.",
+          "The event loop stalls or the 128 MiB container exhausts memory, degrading public API availability."
+        ],
+        "summary": "Many accepted player bindings make each scheduled refresh perform unbounded synchronous work, delaying unrelated public requests."
+      },
+      "codeEvidence": [
+        {
+          "code": "const rows=this.master.prepare(`SELECT o.player,o.revision,e.puid,h.public_id FROM eos_profile_outbox o\n  JOIN eos_players e ON e.player=o.player JOIN history_players h ON h.player=o.player ORDER BY o.player`).all();\nlet published=0;\nconst start=this.cursor;\nfor(let offset=0;offset<rows.length && !this.closed;offset++){\n  const index=(start+offset)%rows.length;\n  const row=rows[index];\n  const old=this.cache.prepare(\"SELECT revision FROM publication WHERE player=?\").get(row.player);\n  const cached=this.cache.prepare(\"SELECT updated_at FROM stats WHERE player=?\").get(row.player);\n  const current=old && Number(old.revision)===Number(row.revision);\n  if(current && cached && Number(cached.updated_at)>Date.now()/1000-300)continue;\n  if(published++>=4)break;",
+          "endLine": 121,
+          "explanation": "`.all()` allocates all rows; every fresh row performs two synchronous cache lookups and continues before either the publication counter or cursor update.",
+          "id": "unbounded-outbox-materialization",
+          "label": "Refresh loads and scans every outbox row before its work cap",
+          "language": "typescript",
+          "path": "scripts/eos-service.ts",
+          "role": "root_control",
+          "startLine": 110
+        },
+        {
+          "code": "const db = new DatabaseSync(\n  process.env.MASTER_DATABASE ?? \"/state/registry.sqlite3\",\n  { readOnly: true },\n);\ndb.exec(\"PRAGMA query_only=ON; PRAGMA busy_timeout=3000;\");\n...\nconst eos=eosEnvironment(db);\neos?.start();",
+          "endLine": 23,
+          "explanation": "The synchronous reconciliation work executes inside the same Node process/event loop that handles public requests.",
+          "id": "shared-sync-api-process",
+          "label": "The public API owns synchronous SQLite and starts the reconciler",
+          "language": "typescript",
+          "path": "scripts/bridge.ts",
+          "role": "sensitive_operation",
+          "startLine": 14
+        }
+      ],
+      "confidence": {
+        "level": "medium",
+        "rationale": "The unbounded `.all()` and per-row synchronous statements are explicit, but the repository does not establish account-creation cost, production population, row size, or the number needed for material outage."
+      },
+      "findingId": "csf_bb3e3e3d5fc9cab071177944",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:d34e39229230ff8db0207f1677005deff19f4bd95ded124956680e97a1246c6e"
+      },
+      "identity": {
+        "anchor": "eos-refresh-full-outbox-sync-scan"
+      },
+      "locations": [
+        {
+          "endLine": 121,
+          "path": "scripts/eos-service.ts",
+          "role": "root_control",
+          "startLine": 110
+        },
+        {
+          "endLine": 23,
+          "path": "scripts/bridge.ts",
+          "role": "shared event loop",
+          "startLine": 14
+        },
+        {
+          "endLine": 17,
+          "path": "scripts/compose.api.yaml",
+          "role": "resource constraint",
+          "startLine": 9
+        }
+      ],
+      "occurrenceId": "occ_f6d9564c76f220f1cf9fee85",
+      "preventiveControls": [
+        "Bounded database pagination",
+        "due-work indexing",
+        "separate reconciliation process or asynchronous database access."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Select a fixed-size page with `LIMIT` and a stable cursor, advance the cursor for every examined row (including fresh rows), and avoid a full `.all()`. Prefer a due/dirty schedule in the writable cache so SQL selects only bounded work. Add scale tests that assert a constant maximum row and statement count regardless of total accepted bindings.",
+      "remediationTests": [
+        "Populate more rows than the page size, mark all fresh, and assert one pass reads at most the fixed page and advances beyond it.",
+        "Assert statement count and heap growth remain bounded as total outbox cardinality increases."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "unbounded-outbox-materialization",
+          "shared-sync-api-process"
+        ],
+        "summary": "The four-item limit bounds only stale publication attempts, not rows materialized or freshness checks, and fresh rows skip cursor advancement."
+      },
+      "ruleId": "resource-exhaustion.unbounded-publication-reconciliation",
+      "severity": {
+        "level": "medium",
+        "rationale": "The failure can repeatedly delay or exhaust a 128 MiB, 0.5-CPU public API container. Exploitation requires many independently accepted EOS-bound accounts and the threshold is not established, reducing likelihood and confidence."
+      },
+      "summary": "Every 15-second EOS refresh materializes the complete publication outbox and performs synchronous cache queries for each row before the four-publication limit applies. Fresh rows do not advance the cursor, so a large accepted binding population repeatedly imposes O(N) work on the same Node event loop that serves public HTTP.",
+      "taxonomy": {
+        "category": "resource-exhaustion",
+        "cwe": [
+          "CWE-400"
+        ]
+      },
+      "title": "Full EOS outbox scans can stall the public API process",
+      "validation": {
+        "assertions": [
+          "The joined outbox query has no LIMIT and ends in `.all()`.",
+          "Two synchronous cache queries run before the publication cap.",
+          "A fresh-row `continue` skips the `finally` block that advances the cursor.",
+          "Refresh starts every 15 seconds in the public API process."
+        ],
+        "counterEvidence": [
+          "Only four actual SDK publication/query attempts occur per pass.",
+          "`active` prevents overlapping refreshes and worker requests are serialized/bounded.",
+          "Each durable row requires an authenticated, officially verified, immutable player/PUID binding."
+        ],
+        "disposition": "reportable",
+        "evidenceRefs": [
+          "unbounded-outbox-materialization",
+          "shared-sync-api-process"
+        ],
+        "limitations": [
+          "No runtime benchmark or production row count was available; application code was not executed."
+        ],
+        "method": "Static complexity and event-loop dataflow review.",
+        "status": "validated",
+        "summary": "All accepted bindings are synchronously materialized and freshness-queried on every pass when current, while the documented four-player limit does not apply."
+      }
+    },
+    {
+      "attackPath": {
+        "controls": [
+          "Generic 404 text",
+          "bilateral interaction denial",
+          "public records intentionally limited to public identity fields"
+        ],
+        "dataflow": {
+          "evidenceRefs": [
+            "friend-search-block-mask",
+            "public-exact-tag-resolution"
+          ],
+          "outcome": "Disclosure of target-side block state.",
+          "sink": "Differential existence/error result.",
+          "source": "Full public friend tag plus authenticated caller identity.",
+          "summary": "The same tag is evaluated once without block context and once with a private bilateral predicate.",
+          "transformations": [
+            "public exact-tag SQL lookup",
+            "authenticated tag resolve",
+            "bilateral block predicate"
+          ]
+        },
+        "evidenceRefs": [
+          "friend-search-block-mask",
+          "public-exact-tag-resolution"
+        ],
+        "impact": {
+          "level": "low",
+          "rationale": "One social preference is disclosed; no authorization bypass or private content access follows."
+        },
+        "likelihood": {
+          "level": "high",
+          "rationale": "For a known tag, the comparison is simple and deterministic."
+        },
+        "preconditions": [
+          "Authenticated caller",
+          "known full friend tag",
+          "caller has not themselves blocked the target"
+        ],
+        "reachability": {
+          "attacker": "Authenticated player probing another public account.",
+          "entrypoint": "Public `/v1/history/players?display_name=...` and authenticated friend search command.",
+          "evidenceRefs": [
+            "friend-search-block-mask",
+            "public-exact-tag-resolution"
+          ],
+          "outcome": "Block decision inferred.",
+          "preconditions": [
+            "Active friend-tag and website search deployment"
+          ],
+          "sink": "Cross-channel response comparison.",
+          "source": "Public tag and private bilateral block decision.",
+          "summary": "Both the public GET search and authenticated friend command are exposed by the active website/friends source cohort."
+        },
+        "steps": [
+          "Resolve the target's full friend tag through public website search.",
+          "Submit authenticated friend search for the same tag.",
+          "Observe `Player not found` despite public confirmation.",
+          "Knowing the caller did not block the target, infer the target-side block."
+        ],
+        "summary": "The attacker correlates public target existence with a block-dependent authenticated failure."
+      },
+      "codeEvidence": [
+        {
+          "code": "+        if action==\"search\":\n+            target = friend_tags.resolve(self.db,body[\"tag\"])\n+            require(target!=who and not self.blocked(who,target),\"Player not found\",404)\n+            return web.json_response(dict(**self.view(who),search_result=self.public_player(target)),headers={\"Cache-Control\":\"no-store\"})",
+          "endLine": 419,
+          "explanation": "A valid tag produces the same 404 text only when self-targeted or bilaterally blocked.",
+          "id": "friend-search-block-mask",
+          "label": "Authenticated friend search masks blocked targets as missing",
+          "language": "diff/python",
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "sensitive_operation",
+          "startLine": 416
+        },
+        {
+          "code": "const exactTag = tags ? db.prepare(`SELECT h.public_id AS id,p.screen_name,p.discord_username,\n  p.screen_name||'#'||t.discriminator AS friend_tag FROM player_friend_tags t\n  JOIN player_profiles p ON p.player=t.player JOIN history_players h ON h.player=p.player\n  WHERE t.discriminator=? AND website_lower(p.screen_name)=?`) : null;\nreturn (name: string) => {\n  const match = /^(.*)#([0-9]{8})$/u.exec(name);\n  if (match) return exactTag?.all(match[2], match[1].normalize(\"NFC\").toLowerCase()) ?? [];",
+          "endLine": 29,
+          "explanation": "The public query confirms that the tag exists and returns its stable public identity without block context.",
+          "id": "public-exact-tag-resolution",
+          "label": "Unauthenticated website search confirms the same exact friend tag",
+          "language": "typescript",
+          "path": "scripts/player-search.ts",
+          "role": "oracle",
+          "startLine": 21
+        }
+      ],
+      "confidence": {
+        "level": "medium",
+        "rationale": "The active patch and website source establish the discrepancy, but the complete integrated master/error behavior is external and the repository does not explicitly state whether block status must always remain secret."
+      },
+      "findingId": "csf_be4d7475f3b36c635192f1b6",
+      "fingerprints": {
+        "algorithm": "codex-security/v1",
+        "primary": "codex-security/v1:sha256:e4991417eb93e7fee78b74e09e0efb0979c242665a6a97f0a08e51eb366c388c"
+      },
+      "identity": {
+        "anchor": "public-tag-friend-block-oracle"
+      },
+      "locations": [
+        {
+          "endLine": 356,
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "bilateral predicate",
+          "startLine": 353
+        },
+        {
+          "endLine": 419,
+          "path": "backend/eos-worker/friends-deployed.patch",
+          "role": "block-dependent response",
+          "startLine": 416
+        },
+        {
+          "endLine": 29,
+          "path": "scripts/player-search.ts",
+          "role": "public comparison oracle",
+          "startLine": 21
+        },
+        {
+          "endLine": 100,
+          "path": "scripts/bridge.ts",
+          "role": "unauthenticated entrypoint",
+          "startLine": 87
+        }
+      ],
+      "occurrenceId": "occ_99fb2336406d1e7b7de30e44",
+      "preventiveControls": [
+        "One documented cross-channel privacy policy for public identity resolution and social blocks."
+      ],
+      "provenance": {
+        "source": "local_plugin"
+      },
+      "remediation": "Decide and document whether block status may be observable. If private, make friend search/request/clan/party behavior caller-indistinguishable for blocked and eligible targets, using an opaque accepted/suppressed workflow, or stop exposing the same exact target resolver across an unauthenticated channel. Add cross-channel regression tests.",
+      "remediationTests": [
+        "Compare every caller-visible response for a nonexistent target, eligible target whose delivery is suppressed, caller-side block, and target-side block.",
+        "Verify public exact-tag resolution cannot be combined with friend/party/clan operations to distinguish block direction."
+      ],
+      "rootCause": {
+        "evidenceRefs": [
+          "friend-search-block-mask",
+          "public-exact-tag-resolution"
+        ],
+        "summary": "Block-dependent ambiguity in the authenticated API is defeated by a separate unauthenticated exact-tag resolver over the same identity namespace."
+      },
+      "ruleId": "privacy.block-state-oracle",
+      "severity": {
+        "level": "low",
+        "rationale": "The leak reveals a single account's block decision and may facilitate harassment or evasion, but it grants no friend mutation, private record, precise presence, or broader account access."
+      },
+      "summary": "The public website resolves a full friend tag to a stable public player ID without authentication, while the authenticated friend search returns `Player not found` when the bilateral block predicate is true. A caller who knows they did not create the block can compare the two channels and infer that the target blocked them.",
+      "taxonomy": {
+        "category": "privacy-information-disclosure",
+        "cwe": [
+          "CWE-203"
+        ]
+      },
+      "title": "Public tag lookup makes private block decisions observable",
+      "validation": {
+        "assertions": [
+          "The friend block predicate is bilateral.",
+          "Authenticated search suppresses a valid target when either direction is blocked.",
+          "Unauthenticated exact-tag search confirms target existence without consulting blocks."
+        ],
+        "counterEvidence": [
+          "Friend tags and public history are intentionally public.",
+          "The master uses generic 404 text and correctly prevents blocked friend/party/clan/voice interactions."
+        ],
+        "disposition": "reportable",
+        "evidenceRefs": [
+          "friend-search-block-mask",
+          "public-exact-tag-resolution"
+        ],
+        "limitations": [
+          "Integrated master source is absent and product policy does not explicitly classify the fact of a block as secret."
+        ],
+        "method": "Static differential-response comparison across active friend and public search surfaces.",
+        "status": "validated",
+        "summary": "A known-valid public tag that resolves publicly but returns the block-dependent friend-search 404 reveals the bilateral predicate; a caller who has not blocked the target knows the opposite direction caused it."
+      }
+    }
+  ],
+  "scanId": "625b1cae-4844-4bbd-a4ad-2f5a0557e32b",
+  "schemaVersion": "1.0"
+}
+

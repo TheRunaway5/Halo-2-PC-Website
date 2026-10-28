@@ -1,0 +1,44 @@
+F
+======================================================================
+FAIL: test_path_swap_cannot_authorize_different_parsed_bytes (rollout_tests.ReviewedBytesTests.test_path_swap_cannot_authorize_different_parsed_bytes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/eric/Developer/Halo-2-PC-Website/backend/eos-worker/tests/test_rollout_security.py", line 34, in test_path_swap_cannot_authorize_different_parsed_bytes
+    self.assertEqual(rollout.main(),2)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+FAILED (failures=1)
+(node:525515) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/eric/Developer/Halo-2-Decompiled/.local/test-scratch/halo2-test-olo99p1i/tests/security-scan-20261028.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/eric/Developer/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ EOS refresh examines a bounded page and advances past fresh rows (10.922623ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 68.47095
+
+✖ failing tests:
+
+test at .local/test-scratch/halo2-test-olo99p1i/tests/security-scan-20261028.test.ts:6:1
+✖ EOS refresh examines a bounded page and advances past fresh rows (10.922623ms)
+  AssertionError [ERR_ASSERTION]: unbounded lookups: 1000
+      at TestContext.<anonymous> (file:///home/eric/Developer/Halo-2-Decompiled/.local/test-scratch/halo2-test-olo99p1i/tests/security-scan-20261028.test.ts:25:35)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
